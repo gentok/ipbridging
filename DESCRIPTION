@@ -1,0 +1,28 @@
+Package: ipbridging
+Title: Bridging Ideal Point Estimates
+Version: 0.0.00
+Authors@R: c(
+    person("Tzu-Ping", "Liu", email = "jamesliu0222@gmail.com", role = "aut"),
+    person("Gento", "Kato", email = "gento.badger@gmail.com", role = c("aut","cre")),
+    person("Samuel", "Fuller", email = "sjfuller@@ucdavis.edu", role = "aut"))
+Description: This package provides parametric and non-parametric methods to bridge ideal point estimates generated from two (or more) separate data sets. 
+Depends: R (>= 3.5)
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Remotes: tzuliu/ooc
+Imports: e1071 (>= 1.7-0),
+    class (>= 7.3-14),
+    Matrix (>= 1.2-14),
+    statar (>= 0.6.5),
+    hitandrun (>= 0.5-4),
+    pscl (>= 1.5.2),
+    plyr (>= 1.8.4),
+    caret (>= 6.0-80),
+    KRLS (>= 1.0-0),
+    oc (>= 1.01),
+    ooc (>= 0.1),
+    wnominate (>= 1.2.5),
+    aspace (>= 3.2),
+    MASS (>= 7.3-50)
+RoxygenNote: 6.1.0
