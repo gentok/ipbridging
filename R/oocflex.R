@@ -124,7 +124,7 @@ compute.nv <- function(xmat, resp, nv.method, ...) {
 #' 
 #' @seealso \code{\link{compute.nv}}, \code{\link{nv.svm}}, and \code{\link{nv.krls}}
 #' 
-#' @author Tzu-ping Liu \email{jamesliu0222@@gmail.com} and Gento Kato \email{gento.badger@@gmail.com}. 
+#' @author Tzu-Ping Liu \email{jamesliu0222@@gmail.com}, Gento Kato \email{gento.badger@@gmail.com}, and Sam Fuller \email{sjfuller@@ucdavis.edu}.
 #' This code is the modified version of the \code{\link[ooc]{ooc}} 
 #' function written by Christopher Hare and Keith T. Poole.
 #' 

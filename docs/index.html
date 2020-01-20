@@ -29,7 +29,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">ipbridging</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.0.0.1</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.0.0</span>
       </span>
     </div>
 
@@ -56,7 +56,47 @@
       
       </header><div class="row">
   <div class="contents col-md-9">
-    This package provides parametric and non-parametric methods to bridge ideal point estimates generated from two (or more) separate data sets. 
+    <div id="ipbridging-package" class="section level1">
+<div class="page-header"><h1 class="hasAnchor">
+<a href="#ipbridging-package" class="anchor"></a><code>ipbridging</code> Package</h1></div>
+<div id="authors" class="section level2">
+<h2 class="hasAnchor">
+<a href="#authors" class="anchor"></a>Authors</h2>
+<p>Tzu-Ping Liu (UC Davis) <br> Gento Kato (UC Davis) <br> Sam Fuller (UC Davis)</p>
+</div>
+<div id="description" class="section level2">
+<h2 class="hasAnchor">
+<a href="#description" class="anchor"></a>Description</h2>
+<p>Bridging Ideal Point Estimates. This package provides parametric and non-parametric methods to bridge ideal point estimates generated from two (or more) separate data sets. The package website is published <a href="https://gentok.github.io/ipbridging/">HERE</a>.</p>
+</div>
+<div id="installation" class="section level2">
+<h2 class="hasAnchor">
+<a href="#installation" class="anchor"></a>Installation</h2>
+<p><code>devtools::install_github(“gentok/ipbridging”)</code></p>
+<p><b>CAUTION!</b> As of January 2020, one of the dependencies, <code>oc</code> package is archived from CRAN. If you don’t already have <code>oc</code> package, you can install the latest version of archived <code>oc</code> package using following codes:</p>
+<p><code>install.packages(“<a href="https://cran.r-project.org/src/contrib/Archive/oc/oc_1.01.tar.gz" class="uri">https://cran.r-project.org/src/contrib/Archive/oc/oc_1.01.tar.gz</a>”, repos=NULL, type=“source”)</code></p>
+<p>Alternatively, you could install <code>oc</code> package from github CRAN mirror:</p>
+<p><code>devtools::install_github(“cran/oc”)</code></p>
+<p>Also, in case you want to use GPU accelerated method to tune SVM parameters in <code>oocflex</code> function, you need to install <code>Rgtsvm</code> package (check the GitHub repository <a href="https://github.com/Danko-Lab/Rgtsvm">HERE</a>). You need to have PC with NVIDIA GPU and Linux OS to install <code>Rgtsvm</code> package.</p>
+</div>
+<div id="main-functions" class="section level2">
+<h2 class="hasAnchor">
+<a href="#main-functions" class="anchor"></a>Main Functions</h2>
+<ul>
+<li>
+<code><a href="https://gentok.github.io/ipbridging/reference/ipbridging.html">ipbridging</a></code>: The main function from this package. It implements methods to bridge ideal point estimates generated from two data sets.</li>
+<li>
+<code><a href="https://gentok.github.io/ipbridging/reference/oocflex.html">oocflex</a></code>: The implementation of Ordered Optimal Classification (OOC) with flexible estimation strategies. This function is the modified version of <code>ooc</code> function in <a href="https://github.com/tzuliu/ooc">ooc package</a>.</li>
+</ul>
+</div>
+<div id="updates-log" class="section level2">
+<h2 class="hasAnchor">
+<a href="#updates-log" class="anchor"></a>Updates Log</h2>
+<ul>
+<li>01/19/2020 Version 0.0.00 (beta version) released</li>
+</ul>
+</div>
+</div>
   </div>
 
   <div class="col-md-3" id="sidebar">

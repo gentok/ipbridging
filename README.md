@@ -28,8 +28,8 @@ Also, in case you want to use GPU accelerated method to tune SVM parameters in <
 
 ## Main Functions
 
-* <code>ipbridging</code> The main function from this package. It implements methods to bridge ideal point estimates generated from two data sets.
-* <code>oocflex</code> The implementation of Ordered Optimal Classification (OOC) with flexible estimation strategies. This function is the modified version of <code>ooc</code> function in [ooc package](https://github.com/tzuliu/ooc).
+* <code>[ipbridging](https://gentok.github.io/ipbridging/reference/ipbridging.html)</code>: The main function from this package. It implements methods to bridge ideal point estimates generated from two data sets.
+* <code>[oocflex](https://gentok.github.io/ipbridging/reference/oocflex.html)</code>: The implementation of Ordered Optimal Classification (OOC) with flexible estimation strategies. This function is the modified version of <code>ooc</code> function in [ooc package](https://github.com/tzuliu/ooc).
 
 ## Updates Log
 
