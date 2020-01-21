@@ -85,8 +85,8 @@ bridge.homography <- function(ip1,
                        which(!anchorrows.ip2 %in% comprows.ip2))
     if (length(acmisloc)>0) {
       warning("Ideal points for some anchors are missing thus they are removed from anchors.")
-      anchorrows.ip1 <- anchorrows.ip1o[-acmisloc]
-      anchorrows.ip2 <- anchorrows.ip2o[-acmisloc]
+      anchorrows.ip1 <- anchorrows.ip1[-acmisloc]
+      anchorrows.ip2 <- anchorrows.ip2[-acmisloc]
     }
 
   } else {
