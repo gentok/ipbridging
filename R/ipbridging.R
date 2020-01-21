@@ -154,6 +154,8 @@ ipbridging <- function(d1, d2,
   }
   if (!is.matrix(d1)&!is.data.frame(d1)) stop("d1 must be matrix or data.frame!") 
   if (!is.matrix(d2)&!is.data.frame(d2)) stop("d2 must be matrix or data.frame!") 
+  if (is.data.frame(d1)) d1 <- as.matrix(d1)
+  if (is.data.frame(d2)) d2 <- as.matrix(d2)
   
   # Respondents Data
   respdt <- data.frame(allid = seq(1,nrow(d1)+nrow(d2)),
@@ -284,7 +286,7 @@ ipbridging <- function(d1, d2,
           
           stop("anchors.newdata is NULL!")
           
-        } else if (!class(anchors.newdata)%in%c("matrix","data.frame")) {
+        } else if (!class(anchors.newdata)[1]%in%c("matrix","data.frame")) {
           
           stop("anchors.newdata must be matrix or data.frame!")
           
@@ -293,6 +295,7 @@ ipbridging <- function(d1, d2,
           stop("anchors.newdata must have same number of column as ")
           
         }
+        if (is.data.frame(anchors.newdata)) anchors.newdata <- as.matrix(anchors.newdata) 
         
         # Set Anchors data
         ac <- anchors.newdata

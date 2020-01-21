@@ -69,6 +69,11 @@ nv.svm <- function(xmat, resp,
     } else {
     ## SVM with Tuning, using GPU through Rgtsvm package (only Linux)
       
+      if (!requireNamespace("Rgtsvm", quietly = TRUE)) {
+        stop("Package \"Rgtsvm\" needed for this option to work. Please install it.",
+             call. = FALSE)
+      }
+      
       settype <- ifelse(is.numeric(resp),"eps-regression", "C-classification")
       
       res <- Rgtsvm::best.tune(Rgtsvm::svm, x=xmat, y=resp, 
