@@ -45,9 +45,42 @@ bridge.olsmap <- function(ip1,
     stop("anchorrows.ip1 and anchorrows.ip2 must have the same length!")
   }
   
+  ## Exclude Missing Cases from the Analysis, if there are any
+  comprows.ip1 <- which(complete.cases(ip1))
+  comprows.ip2 <- which(complete.cases(ip2))
+  ip1.rowid <- seq(1,nrow(ip1))
+  ip2.rowid <- seq(1,nrow(ip2))
+  if (length(c(comprows.ip1,comprows.ip2))<nrow(ip1)+nrow(ip2)) {
+    
+    # Store Originals
+    ip1o <- ip1
+    ip2o <- ip2
+    
+    # Dropping NAs from ip
+    ip1 <- ip1o[comprows.ip1,]
+    ip2 <- ip2o[comprows.ip2,]
+    ip1.rowid <- ip1.rowid[comprows.ip1]
+    ip2.rowid <- ip2.rowid[comprows.ip2]
+    
+    # Dropping NAs from anchorrows
+    acmisloc <- unique(which(!anchorrows.ip1 %in% comprows.ip1), 
+                       which(!anchorrows.ip2 %in% comprows.ip2))
+    if (length(acmisloc)>0) {
+      warning("Ideal points for some anchors are missing thus they are removed from anchors.")
+      anchorrows.ip1 <- anchorrows.ip1o[-acmisloc]
+      anchorrows.ip2 <- anchorrows.ip2o[-acmisloc]
+    }
+    
+  } else {
+    
+    ip1o <- NULL
+    ip2o <- NULL
+    
+  }
+  
   ## Generating Anchors 
-  ac1 <- ip1[anchorrows.ip1,,drop=FALSE]
-  ac2 <- ip2[anchorrows.ip2,,drop=FALSE]
+  ac1 <- ip1[which(ip1.rowid %in% anchorrows.ip1),,drop=FALSE]
+  ac2 <- ip2[which(ip2.rowid %in% anchorrows.ip2),,drop=FALSE]
   colnames(ac2) <- paste0("cd", 1:ncol(ac2))
   
   # Regression Formula
@@ -63,8 +96,19 @@ bridge.olsmap <- function(ip1,
   colnames(ip2_trans_f) <- colnames(ip2)
   
   ## For anchors, just use their ip1 coordinates
-  ip2_trans_f[anchorrows.ip2,] <- ip1[anchorrows.ip1,]
-
+  ip2_trans_f[which(ip2.rowid %in% anchorrows.ip2),] <- 
+    ip1[which(ip1.rowid %in% anchorrows.ip1),]
+  
+  # Putting NA Values Back In!
+  if (!is.null(ip1o)) {
+    
+    ip1 <- ip1o
+    ip2 <- ip2o
+    ip2o[comprows.ip2,] <- ip2_trans_f
+    ip2_trans_f <- ip2o
+    
+  }
+  
   ######################
   ## Compiling Output ##
   ######################

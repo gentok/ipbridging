@@ -63,10 +63,43 @@ bridge.homography <- function(ip1,
   ## For now, the method is only applicable to 2-D ideal point coordinates
   if (ncol(ip1)!=2) stop("The method is currently only applicable to 2-D coordinates!")
   
+  ## Exclude Missing Cases from the Analysis, if there are any
+  comprows.ip1 <- which(complete.cases(ip1))
+  comprows.ip2 <- which(complete.cases(ip2))
+  ip1.rowid <- seq(1,nrow(ip1))
+  ip2.rowid <- seq(1,nrow(ip2))
+  if (length(c(comprows.ip1,comprows.ip2))<nrow(ip1)+nrow(ip2)) {
+    
+    # Store Originals
+    ip1o <- ip1
+    ip2o <- ip2
+    
+    # Dropping NAs from ip
+    ip1 <- ip1o[comprows.ip1,]
+    ip2 <- ip2o[comprows.ip2,]
+    ip1.rowid <- ip1.rowid[comprows.ip1]
+    ip2.rowid <- ip2.rowid[comprows.ip2]
+    
+    # Dropping NAs from anchorrows
+    acmisloc <- unique(which(!anchorrows.ip1 %in% comprows.ip1), 
+                       which(!anchorrows.ip2 %in% comprows.ip2))
+    if (length(acmisloc)>0) {
+      warning("Ideal points for some anchors are missing thus they are removed from anchors.")
+      anchorrows.ip1 <- anchorrows.ip1o[-acmisloc]
+      anchorrows.ip2 <- anchorrows.ip2o[-acmisloc]
+    }
+
+  } else {
+    
+    ip1o <- NULL
+    ip2o <- NULL
+
+  }
+
   ## Generating Anchors 
-  ac1 <- ip1[anchorrows.ip1,,drop=FALSE]
-  ac2 <- ip2[anchorrows.ip2,,drop=FALSE]
-  
+  ac1 <- ip1[which(ip1.rowid %in% anchorrows.ip1),,drop=FALSE]
+  ac2 <- ip2[which(ip2.rowid %in% anchorrows.ip2),,drop=FALSE]
+    
   ## Initial Values in Optimization
   num_in <- 0
   f_pool <- 0
@@ -209,9 +242,21 @@ bridge.homography <- function(ip1,
   ## Create transformed coordinates
   ip2_trans_f <- ip2
   ## For non-anchors, set blended IPs
-  ip2_trans_f[-anchorrows.ip2,] <- do.call("rbind", lapply(seq(1,nrow(ip2))[-anchorrows.ip2], ip2_blend) )
+  ip2_trans_f[-which(ip2.rowid %in% anchorrows.ip2),] <- 
+    do.call("rbind", lapply(seq(1,nrow(ip2))[-which(ip2.rowid %in% anchorrows.ip2)], ip2_blend) )
   ## For anchors, just use their ip1 coordinates
-  ip2_trans_f[anchorrows.ip2,] <- ip1[anchorrows.ip1,]
+  ip2_trans_f[which(ip2.rowid %in% anchorrows.ip2),] <- 
+    ip1[which(ip1.rowid %in% anchorrows.ip1),]
+  
+  # Putting NA Values Back In!
+  if (!is.null(ip1o)) {
+    
+    ip1 <- ip1o
+    ip2 <- ip2o
+    ip2o[comprows.ip2,] <- ip2_trans_f
+    ip2_trans_f <- ip2o
+    
+  }
   
   ######################
   ## Compiling Output ##

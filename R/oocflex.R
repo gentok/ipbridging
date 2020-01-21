@@ -154,6 +154,8 @@ oocflex <- function(votemat,
   if (!is.null(random.seed)) set.seed(random.seed)
   # set.seed(1985)
   
+  if (is.data.frame(votemat)) votemat <- as.matrix(votemat)
+  
   nvotes <- ncol(votemat) # Number of Issues
   ndim <- dims # Number of dimention in ideal points
 

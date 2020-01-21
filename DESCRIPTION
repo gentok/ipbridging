@@ -1,6 +1,6 @@
 Package: ipbridging
 Title: Bridging Ideal Point Estimates
-Version: 0.0.01
+Version: 0.0.02
 Authors@R: c(
     person("Tzu-Ping", "Liu", email = "jamesliu0222@gmail.com", role = "aut"),
     person("Gento", "Kato", email = "gento.badger@gmail.com", role = c("aut","cre")),
