@@ -432,9 +432,9 @@ ipbridging <- function(d1, d2,
     }
     
     # Update respdt for anchor rows
-    respdt$isanchor[bridge.model$anchorrows.ip1[which(bridge.model$anchorrows.ip1 <= nrow(d1))]] <- 1
-    respdt$isanchor[bridge.model$anchorrows.ip2[which(bridge.model$anchorrows.ip2 <= nrow(d2))]+nrow(d1)] <- 1
-    
+    respdt$isanchor[anchorrows.ip1[which(anchorrows.ip1 <= nrow(d1))]] <- 1
+    respdt$isanchor[anchorrows.ip2[which(anchorrows.ip2 <= nrow(d2))]+nrow(d1)] <- 1
+
     ## Add IP values to respdt
     for(i in 1:ncol(ip1)) respdt[,paste0("bridged",i,"D")] <- NA
     for(i in 1:ncol(ip1)) respdt[,paste0("bridged",i,"D")][which(respdt$data==2|respdt$isanchor==1)] <- ip2_trans[,i]
@@ -448,7 +448,7 @@ ipbridging <- function(d1, d2,
     for(i in 1:ncol(ip1)) respdt[,paste0("ip1_coord",i,"D")][which(respdt$data==1|respdt$isanchor==1)] <- ip1[,i]
     for(i in 1:ncol(ip1)) respdt[,paste0("ip2_coord",i,"D")] <- NA
     for(i in 1:ncol(ip1)) respdt[,paste0("ip2_coord",i,"D")][which(respdt$data==2|respdt$isanchor==1)] <- ip2[,i]
-    
+
     cat("DONE!\n\n")
     ## Compile Output
     out <- list(bridge.data = respdt, 
