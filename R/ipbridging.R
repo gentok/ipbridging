@@ -437,17 +437,26 @@ ipbridging <- function(d1, d2,
 
     ## Add IP values to respdt
     for(i in 1:ncol(ip1)) respdt[,paste0("bridged",i,"D")] <- NA
-    for(i in 1:ncol(ip1)) respdt[,paste0("bridged",i,"D")][which(respdt$data==2|respdt$isanchor==1)] <- ip2_trans[,i]
-    for(i in 1:ncol(ip1)) respdt[,paste0("bridged",i,"D")][which(respdt$data==1|respdt$isanchor==1)] <- ip1[,i]
+    for(i in 1:ncol(ip1)) respdt[,paste0("ip1_coord",i,"D")] <- NA
+    for(i in 1:ncol(ip1)) respdt[,paste0("ip2_coord",i,"D")] <- NA
     if (anchors.method=="selectrows") {
+      
+      for(i in 1:ncol(ip1)) respdt[,paste0("bridged",i,"D")][which(respdt$data==2)] <- ip2_trans[,i]
+      for(i in 1:ncol(ip1)) respdt[,paste0("bridged",i,"D")][which(respdt$data==1)] <- ip1[,i]
+      for(i in 1:ncol(ip1)) respdt[,paste0("ip1_coord",i,"D")][which(respdt$data==1)] <- ip1[,i]
+      for(i in 1:ncol(ip1)) respdt[,paste0("ip2_coord",i,"D")][which(respdt$data==2)] <- ip2[,i]
       # If anchors.method=="selectrows", anchors are duplicated in d2. 
       # Therefore bridged ideal points of anchors in d2 are replaced with NA.
       for(i in 1:ncol(ip1)) respdt[,paste0("bridged",i,"D")][which(respdt$data==2 & respdt$isanchor==1)] <- NA
+      
+    } else {
+      
+      for(i in 1:ncol(ip1)) respdt[,paste0("bridged",i,"D")][which(respdt$data==2|respdt$isanchor==1)] <- ip2_trans[,i]
+      for(i in 1:ncol(ip1)) respdt[,paste0("bridged",i,"D")][which(respdt$data==1|respdt$isanchor==1)] <- ip1[,i]
+      for(i in 1:ncol(ip1)) respdt[,paste0("ip1_coord",i,"D")][which(respdt$data==1|respdt$isanchor==1)] <- ip1[,i]
+      for(i in 1:ncol(ip1)) respdt[,paste0("ip2_coord",i,"D")][which(respdt$data==2|respdt$isanchor==1)] <- ip2[,i]
+      
     }
-    for(i in 1:ncol(ip1)) respdt[,paste0("ip1_coord",i,"D")] <- NA
-    for(i in 1:ncol(ip1)) respdt[,paste0("ip1_coord",i,"D")][which(respdt$data==1|respdt$isanchor==1)] <- ip1[,i]
-    for(i in 1:ncol(ip1)) respdt[,paste0("ip2_coord",i,"D")] <- NA
-    for(i in 1:ncol(ip1)) respdt[,paste0("ip2_coord",i,"D")][which(respdt$data==2|respdt$isanchor==1)] <- ip2[,i]
 
     cat("DONE!\n\n")
     ## Compile Output
