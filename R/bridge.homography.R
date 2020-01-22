@@ -81,8 +81,8 @@ bridge.homography <- function(ip1,
     ip2.rowid <- ip2.rowid[comprows.ip2]
     
     # Dropping NAs from anchorrows
-    acmisloc <- unique(which(!anchorrows.ip1 %in% comprows.ip1), 
-                       which(!anchorrows.ip2 %in% comprows.ip2))
+    acmisloc <- unique(c(which(!anchorrows.ip1 %in% comprows.ip1), 
+                         which(!anchorrows.ip2 %in% comprows.ip2)))
     if (length(acmisloc)>0) {
       warning("Ideal points for some anchors are missing thus they are removed from anchors.")
       anchorrows.ip1 <- anchorrows.ip1[-acmisloc]
@@ -152,7 +152,7 @@ bridge.homography <- function(ip1,
                 lapply(1:nrow(ac2),
                        function(i) 
                          matrix(c((h[1]*ac2[i,1] + h[2]*ac2[i,2] + h[3])/
-                                    (h[7]*ac2[i,1] + h[8]*ac2[i,2] +1), 
+                                    (h[7]*ac2[i,1] + h[8]*ac2[i,2] + 1), 
                                   (h[4]*ac2[i,1] + h[5]*ac2[i,2] + h[6])/
                                     (h[7]*ac2[i,1] + h[8]*ac2[i,2] + 1)),
                                 nrow=1)
