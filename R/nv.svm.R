@@ -60,8 +60,8 @@ nv.svm <- function(xmat, resp,
       # No Tuning
       
       res <- e1071::svm(x=xmat, y=resp, scale=FALSE, ...)
-      cat(paste("coefs dimension is", paste(dim(res$coefs), collapse=","),
-            "SV dimension is", paste(dim(res$SV), collapse=",")))
+      cat(paste("coefs length is", length(res$coefs),
+                "| SV dimension is", paste(dim(res$SV), collapse=",")))
       coefs <- t(res$coefs) %*% res$SV
       
     } else if (is.list(tune.param)) {
@@ -121,7 +121,7 @@ nv.svm <- function(xmat, resp,
       # No Tuning
       
       res <- Rgtsvm::svm(x=xmat, y=resp, scale=FALSE, type=settype, ...)
-      cat(paste("coefs dimension is", paste(dim(res$coefs), collapse=","),
+      cat(paste("coefs length is", length(res$coefs),
             "SV dimension is", paste(dim(res$SV), collapse=",")))
       coefs <- t(res$coefs) %*% res$SV
       
