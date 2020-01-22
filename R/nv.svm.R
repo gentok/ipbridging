@@ -51,6 +51,8 @@ nv.svm <- function(xmat, resp,
                    use.gpu = FALSE, 
                    param.heuristics.k = 3, ...) {
   
+  # cat(paste0("\nxmat dimension is ",dim(xmat)[1]," rows and ", dim(xmat)[2], " columns. ", "resp length is ", length(resp), ".\n\n"))
+  
   if (use.gpu==FALSE) {
   # NOT using GPU
       

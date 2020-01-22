@@ -510,7 +510,9 @@ oocflex <- function(votemat,
         for (j in 1:nvotes){
           
           # Estimate and Normal Vector
-          nvest <- compute.nv(xmat=XMATTEMP, resp=votemat[,j], nv.method=nv.method, ...)
+          xmat1 <- XMATTEMP[complete.cases(XMATTEMP,votemat[,j]),]
+          resp1 <- votemat[complete.cases(XMATTEMP,votemat[,j]),j]
+          nvest <- compute.nv(xmat=xmat1, resp=resp1, nv.method=nv.method, ...)
           
           # Store the Output
           for (q in 1:ndim) ZVEC_regress[j,q] <- nvest[q]
