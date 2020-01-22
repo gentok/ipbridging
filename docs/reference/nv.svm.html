@@ -61,7 +61,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ipbridging</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.0.0</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.0.3</span>
       </span>
     </div>
 
@@ -103,7 +103,7 @@
     
     </div>
 
-    <pre class="usage"><span class='fu'>nv.svm</span>(<span class='no'>xmat</span>, <span class='no'>resp</span>, <span class='kw'>tune.param</span> <span class='kw'>=</span> <span class='st'>"heuristics"</span>, <span class='kw'>tune.gpu</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
+    <pre class="usage"><span class='fu'>nv.svm</span>(<span class='no'>xmat</span>, <span class='no'>resp</span>, <span class='kw'>tune.param</span> <span class='kw'>=</span> <span class='st'>"heuristics"</span>, <span class='kw'>use.gpu</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
   <span class='kw'>param.heuristics.k</span> <span class='kw'>=</span> <span class='fl'>3</span>, <span class='no'>...</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
@@ -135,10 +135,10 @@ Following options are currently available:</p><ul>
 </ul></td>
     </tr>
     <tr>
-      <th>tune.gpu</th>
-      <td><p>If <code>TRUE</code> and tuning is conducted, 
-the method replaces <code><a href='http://www.rdocumentation.org/packages/e1071/topics/tune'>best.tune</a></code> function with 
-the <code>best.tune</code> function in <code>Rgtsvm</code> package, which contains
+      <th>use.gpu</th>
+      <td><p>If <code>TRUE</code>, the method replaces <code><a href='http://www.rdocumentation.org/packages/e1071/topics/tune'>best.tune</a></code> 
+and <code><a href='http://www.rdocumentation.org/packages/e1071/topics/svm'>svm</a></code> functions with 
+the <code>best.tune</code> and <code>svm</code> functions in <code>Rgtsvm</code> package, which contains
 GPU accelerate method of <code>svm</code> function. Install <code>Rgtsvm</code> manually. 
 You need to have Linux computer with NVIDIA GPU for the installation.
 Check <a href='https://github.com/Danko-Lab/Rgtsvm'>https://github.com/Danko-Lab/Rgtsvm</a> for more details.</p></td>

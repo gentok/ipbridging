@@ -4,7 +4,7 @@
 \alias{nv.svm}
 \title{Estimating Normal Vector through Support Vector Machine}
 \usage{
-nv.svm(xmat, resp, tune.param = "heuristics", tune.gpu = FALSE,
+nv.svm(xmat, resp, tune.param = "heuristics", use.gpu = FALSE,
   param.heuristics.k = 3, ...)
 }
 \arguments{
@@ -28,9 +28,9 @@ Following options are currently available:
   to obtain the best perfomed model in the given parameter ranges. 
 }}
 
-\item{tune.gpu}{If \code{TRUE} and tuning is conducted, 
-the method replaces \code{\link[e1071]{best.tune}} function with 
-the \code{best.tune} function in \code{Rgtsvm} package, which contains
+\item{use.gpu}{If \code{TRUE}, the method replaces \code{\link[e1071]{best.tune}} 
+and \code{\link[e1071]{svm}} functions with 
+the \code{best.tune} and \code{svm} functions in \code{Rgtsvm} package, which contains
 GPU accelerate method of \code{svm} function. Install \code{Rgtsvm} manually. 
 You need to have Linux computer with NVIDIA GPU for the installation.
 Check \url{https://github.com/Danko-Lab/Rgtsvm} for more details.}
