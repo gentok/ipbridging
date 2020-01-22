@@ -60,8 +60,6 @@ nv.svm <- function(xmat, resp,
       # No Tuning
       
       res <- e1071::svm(x=xmat, y=resp, scale=FALSE, ...)
-      cat(paste("coefs are", paste(round(res$coefs,4), collapse="|"),
-                "| SV dimension is", paste(dim(res$SV), collapse=",")))
       coefs <- t(res$coefs) %*% res$SV
       
     } else if (is.list(tune.param)) {
@@ -121,9 +119,7 @@ nv.svm <- function(xmat, resp,
       # No Tuning
       
       res <- Rgtsvm::svm(x=xmat, y=resp, scale=FALSE, type=settype, ...)
-      cat(paste("coefs are", paste(round(res$coefs,4), collapse="|"),
-                "| SV dimension is", paste(dim(res$SV), collapse=",")))
-      coefs <- t(res$coefs) %*% res$SV
+      coefs <- t(res$coefs[seq(1,nrow(res$SV))]) %*% res$SV
       
     } else if (is.list(tune.param)) {
       # Tuning Parameter Values Specified  
@@ -140,7 +136,7 @@ nv.svm <- function(xmat, resp,
                                epsilon=tune.param$epsilon, 
                                type = settype, scale=FALSE, ...)
       res <- res$best.model
-      coefs <- t(res$coefs) %*% res$SV
+      coefs <- t(res$coefs[seq(1,nrow(res$SV))]) %*% res$SV
       
     } else if (tune.param=="heuristics") {
       # Use Heuristics to set epsilon and C if using SVM EPS regression  
@@ -162,13 +158,13 @@ nv.svm <- function(xmat, resp,
         # Run EPS regression with Optimal C and Epsilon
         res <- Rgtsvm::svm(x=xmat, y=resp, scale=FALSE, 
                           type="eps-regression", cost=optc, epsilon=opteps, ...)
-        coefs <- t(res$coefs) %*% res$SV
+        coefs <- t(res$coefs[seq(1,nrow(res$SV))]) %*% res$SV
         
       } else if (is.factor(resp)) {
         # Use Default (or manually set) parameters if resp is a factor
         
         res <- Rgtsvm::svm(x=xmat, y=resp, scale=FALSE, type=settype, ...)
-        coefs <- t(res$coefs) %*% res$SV
+        coefs <- t(res$coefs[seq(1,nrow(res$SV))]) %*% res$SV
         
       } else {
         stop("Invalid 'resp' class!")
