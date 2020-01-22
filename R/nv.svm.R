@@ -60,13 +60,15 @@ nv.svm <- function(xmat, resp,
       # No Tuning
       
       res <- e1071::svm(x=xmat, y=resp, scale=FALSE, ...)
+      paste("coefs dimsnsion is", paste(dim(res$coefs), collapse=","),
+            "SV dimension is", paste(dim(res$SV), collapse=","))
       coefs <- t(res$coefs) %*% res$SV
       
     } else if (is.list(tune.param)) {
       # Tuning Parameter Values Specified  
       
       res <- e1071::best.tune(e1071::svm, train.x=xmat, train.y=resp, 
-                              ranges = tune.param, ...)
+                              ranges = tune.param, scale=FALSE, ...)
       coefs <- t(res$coefs) %*% res$SV
       
     } else if (tune.param=="heuristics") {
@@ -119,6 +121,8 @@ nv.svm <- function(xmat, resp,
       # No Tuning
       
       res <- Rgtsvm::svm(x=xmat, y=resp, scale=FALSE, type=settype, ...)
+      paste("coefs dimsnsion is", paste(dim(res$coefs), collapse=","),
+            "SV dimension is", paste(dim(res$SV), collapse=","))
       coefs <- t(res$coefs) %*% res$SV
       
     } else if (is.list(tune.param)) {
@@ -134,7 +138,7 @@ nv.svm <- function(xmat, resp,
                                nu=tune.param$nu,
                                class.weights=tune.param$class.weights,
                                epsilon=tune.param$epsilon, 
-                               type = settype, ...)
+                               type = settype, scale=FALSE, ...)
       res <- res$best.model
       coefs <- t(res$coefs) %*% res$SV
       
