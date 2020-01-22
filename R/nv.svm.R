@@ -119,6 +119,7 @@ nv.svm <- function(xmat, resp,
       # No Tuning
       
       res <- Rgtsvm::svm(x=xmat, y=resp, scale=FALSE, type=settype, ...)
+      cat("\nrunning svm\n")
       coefs <- t(res$coefs[seq(1,nrow(res$SV))]) %*% res$SV
       
     } else if (is.list(tune.param)) {
