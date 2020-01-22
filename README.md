@@ -33,6 +33,7 @@ Also, in case you want to use GPU accelerated method to tune SVM parameters in <
 
 ## Updates Log
 
+* 01/22/2020 Version 0.0.03 (beta version 4)
 * 01/21/2020 Version 0.0.02 (beta version 3)
 * 01/20/2020 Version 0.0.01 (beta version 2)
 * 01/19/2020 Version 0.0.00 (beta version) released

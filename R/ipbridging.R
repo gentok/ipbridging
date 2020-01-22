@@ -267,10 +267,6 @@ ipbridging <- function(d1, d2,
         anchorrows.ip1 <- anchors.selectrows.d1
         anchorrows.ip2 <- anchors.selectrows.d2
 
-        # Update respdt
-        respdt$isanchor[anchors.selectrows.d1] <- 1
-        respdt$isanchor[anchors.selectrows.d2+nrow(d1)] <- 1
-        
       }
       
       
@@ -351,10 +347,6 @@ ipbridging <- function(d1, d2,
           
         }
         
-        # Update respdt
-        respdt$isanchor[anchors.samplerows.d1] <- 1
-        respdt$isanchor[anchors.samplerows.d2+nrow(d1)] <- 1
-        
         ## Update Dataset for Ideal Point Computation
         d1x <- rbind(d1, d2[anchors.samplerows.d2,])
         d2x <- rbind(d2, d1[anchors.samplerows.d1,])
@@ -402,69 +394,73 @@ ipbridging <- function(d1, d2,
         stop("Invalid 'ip.method' value!")
         
       }
-      
-      #############
-      ## Mapping ##
-      #############
-      
-      ## Homography Transformation Method
-      cat("\nMapping d2 ideal points on d1 ideal points space...\n\n")
-      if (bridge.method=="homography") {
-        
-        bridge.model <- bridge.homography(ip1=ip1,
-                                    ip2=ip2,
-                                    anchorrows.ip1=anchorrows.ip1,
-                                    anchorrows.ip2=anchorrows.ip2, 
-                                    opt.iter.n = hg.opt.iter.n,
-                                    opt.sample.n = hg.opt.sample.n,
-                                    opt.th.inline = hg.opt.th.inline,
-                                    blend.th1 = hg.blend.th1, 
-                                    blend.th2 = hg.blend.th2)
-        ip2_trans <- bridge.model$ip2_trans
-        
-      }
-      if (bridge.method=="olsmap") {
-        
-        bridge.model <- bridge.olsmap(ip1=ip1,
-                                      ip2=ip2,
-                                      anchorrows.ip1=anchorrows.ip1,
-                                      anchorrows.ip2=anchorrows.ip2)
-        ip2_trans <- bridge.model$ip2_trans
-        
-      }
-
-      ## Add IP values to respdt
-      for(i in 1:ncol(ip1)) respdt[,paste0("bridged",i,"D")] <- NA
-      for(i in 1:ncol(ip1)) respdt[,paste0("bridged",i,"D")][which(respdt$data==2|respdt$isanchor==1)] <- ip2_trans[,i]
-      for(i in 1:ncol(ip1)) respdt[,paste0("bridged",i,"D")][which(respdt$data==1|respdt$isanchor==1)] <- ip1[,i]
-      if (anchors.method=="selectrows") {
-        # If anchors.method=="selectrows", anchors are duplicated in d2. 
-        # Therefore bridged ideal points of anchors in d2 are replaced with NA.
-        for(i in 1:ncol(ip1)) respdt[,paste0("bridged",i,"D")][which(respdt$data==2 & respdt$isanchor==1)] <- NA
-      }
-      for(i in 1:ncol(ip1)) respdt[,paste0("ip1_coord",i,"D")] <- NA
-      for(i in 1:ncol(ip1)) respdt[,paste0("ip1_coord",i,"D")][which(respdt$data==1|respdt$isanchor==1)] <- ip1[,i]
-      for(i in 1:ncol(ip1)) respdt[,paste0("ip2_coord",i,"D")] <- NA
-      for(i in 1:ncol(ip1)) respdt[,paste0("ip2_coord",i,"D")][which(respdt$data==2|respdt$isanchor==1)] <- ip2[,i]
-      
-      cat("DONE!\n\n")
-      ## Compile Output
-      out <- list(bridge.data = respdt, 
-                  bridge.model = bridge.model,
-                  bridge.method = bridge.method, 
-                  ip.model.d1 = ip1_f,
-                  ip.model.d2 = ip2_f,
-                  ip.method = ip.method,
-                  ip.dims = ip.dims,
-                  input.type = input.type,
-                  anchors.method = anchors.method)
-      return(out)
 
     } else {
       
       stop("Invalid 'input.type' value!")
       
-    }    
+    } 
+    
+    #############
+    ## Mapping ##
+    #############
+    
+    ## Homography Transformation Method
+    cat("\nMapping d2 ideal points on d1 ideal points space...\n\n")
+    if (bridge.method=="homography") {
+      
+      bridge.model <- bridge.homography(ip1=ip1,
+                                        ip2=ip2,
+                                        anchorrows.ip1=anchorrows.ip1,
+                                        anchorrows.ip2=anchorrows.ip2, 
+                                        opt.iter.n = hg.opt.iter.n,
+                                        opt.sample.n = hg.opt.sample.n,
+                                        opt.th.inline = hg.opt.th.inline,
+                                        blend.th1 = hg.blend.th1, 
+                                        blend.th2 = hg.blend.th2)
+      ip2_trans <- bridge.model$ip2_trans
+      
+    }
+    if (bridge.method=="olsmap") {
+      
+      bridge.model <- bridge.olsmap(ip1=ip1,
+                                    ip2=ip2,
+                                    anchorrows.ip1=anchorrows.ip1,
+                                    anchorrows.ip2=anchorrows.ip2)
+      ip2_trans <- bridge.model$ip2_trans
+      
+    }
+    
+    # Update respdt for anchor rows
+    respdt$isanchor[bridge.model$anchorrows.ip1[which(bridge.model$anchorrows.ip1 <= nrow(d1))]] <- 1
+    respdt$isanchor[bridge.model$anchorrows.ip2[which(bridge.model$anchorrows.ip2 <= nrow(d2))]+nrow(d1)] <- 1
+    
+    ## Add IP values to respdt
+    for(i in 1:ncol(ip1)) respdt[,paste0("bridged",i,"D")] <- NA
+    for(i in 1:ncol(ip1)) respdt[,paste0("bridged",i,"D")][which(respdt$data==2|respdt$isanchor==1)] <- ip2_trans[,i]
+    for(i in 1:ncol(ip1)) respdt[,paste0("bridged",i,"D")][which(respdt$data==1|respdt$isanchor==1)] <- ip1[,i]
+    if (anchors.method=="selectrows") {
+      # If anchors.method=="selectrows", anchors are duplicated in d2. 
+      # Therefore bridged ideal points of anchors in d2 are replaced with NA.
+      for(i in 1:ncol(ip1)) respdt[,paste0("bridged",i,"D")][which(respdt$data==2 & respdt$isanchor==1)] <- NA
+    }
+    for(i in 1:ncol(ip1)) respdt[,paste0("ip1_coord",i,"D")] <- NA
+    for(i in 1:ncol(ip1)) respdt[,paste0("ip1_coord",i,"D")][which(respdt$data==1|respdt$isanchor==1)] <- ip1[,i]
+    for(i in 1:ncol(ip1)) respdt[,paste0("ip2_coord",i,"D")] <- NA
+    for(i in 1:ncol(ip1)) respdt[,paste0("ip2_coord",i,"D")][which(respdt$data==2|respdt$isanchor==1)] <- ip2[,i]
+    
+    cat("DONE!\n\n")
+    ## Compile Output
+    out <- list(bridge.data = respdt, 
+                bridge.model = bridge.model,
+                bridge.method = bridge.method, 
+                ip.model.d1 = ip1_f,
+                ip.model.d2 = ip2_f,
+                ip.method = ip.method,
+                ip.dims = ip.dims,
+                input.type = input.type,
+                anchors.method = anchors.method)
+    return(out)
         
   } else {
     
