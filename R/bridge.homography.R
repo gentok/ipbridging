@@ -116,7 +116,7 @@ bridge.homography <- function(ip1,
     while (ite <= opt.iter.n) {
       
       ## Sampled Anchors for the simulation
-      pool <- sample.int(length(anchorrows.ip2), size=opt.sample.n, replace=FALSE)
+      pool <- sample.int(nrow(ac2), size=opt.sample.n, replace=FALSE)
       ac1_r <- ac1[pool,]
       ac2_r <- ac2[pool,]
       
@@ -149,7 +149,7 @@ bridge.homography <- function(ip1,
       ##############################################################
       ac2_trans <- 
         do.call("rbind",
-                lapply(1:length(anchorrows.ip2),
+                lapply(1:nrow(ac2),
                        function(i) 
                          matrix(c((h[1]*ac2[i,1] + h[2]*ac2[i,2] + h[3])/
                                     (h[7]*ac2[i,1] + h[8]*ac2[i,2] +1), 
