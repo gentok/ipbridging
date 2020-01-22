@@ -124,7 +124,7 @@ nv.svm <- function(xmat, resp,
       
       ## SVM with Tuning, using GPU through Rgtsvm package (only Linux)
       
-      res <- Rgtsvm::best.tune(Rgtsvm::svm, x=xmat, y=resp, 
+      res <- Rgtsvm::tune.svm(Rgtsvm::svm, x=xmat, y=resp, 
                                degree=tune.param$degree,
                                gamma=tune.param$gamma,
                                coef0=tune.param$coef0,
@@ -133,6 +133,7 @@ nv.svm <- function(xmat, resp,
                                class.weights=tune.param$class.weights,
                                epsilon=tune.param$epsilon, 
                                type = settype, ...)
+      res <- res$best.model
       coefs <- t(res$coefs) %*% res$SV
       
     } else if (tune.param=="heuristics") {
