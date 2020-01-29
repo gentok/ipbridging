@@ -1,6 +1,6 @@
 Package: ipbridging
 Title: Bridging Ideal Point Estimates
-Version: 0.0.03
+Version: 0.0.04
 Authors@R: c(
     person("Tzu-Ping", "Liu", email = "jamesliu0222@gmail.com", role = "aut"),
     person("Gento", "Kato", email = "gento.badger@gmail.com", role = c("aut","cre")),
@@ -24,5 +24,6 @@ Imports: e1071 (>= 1.7-0),
     ooc (>= 0.1),
     wnominate (>= 1.2.5),
     aspace (>= 3.2),
-    MASS (>= 7.3-50)
+    MASS (>= 7.3-50),
+    basicspace (>= 0.20)
 RoxygenNote: 6.1.0

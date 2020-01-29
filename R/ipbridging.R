@@ -14,15 +14,24 @@
 #' @param bridge.method Method of bridging. Currently, following methods are aviailable:
 #' \itemize{
 #'   \item \code{"homography"} (default): Homography transformation method. 
-#'   Non-parametric method to find optimal transformation matrix to bridge ideal point 
-#'   estimates (calls \code{\link{bridge.homography}}).
-#'   \item \code{"olsmap"}: Use OLs regression to map \code{d2} ideal point coordinates 
-#'   on \code{d1} ideal point space. The procedure described in Shor et al. (2010). 
-#'   \item \code{"pooling"}: Pooling method. Simple method to combine \code{d1} and 
-#'   \code{d2} to jointly compute ideal points. The procedure described in Jessee (2016).
+#'   Based on anchor cases, this method provides non-parametric procedure to 
+#'   find optimal transformation matrix to bridge ideal point estimates (calls \code{\link{bridge.homography}}).
+#'   \item \code{"joint"}: Joint scaling method. Simple method to combine \code{d1} and 
+#'   \code{d2} and jointly compute ideal points. The procedure described in Jessee (2016).
+#'   \item \code{"modelmap"}: Use the model estimated on \code{d1} to map
+#'   ideal point coordinates of \code{d2} respondents. This method does not require 
+#'   anchor cases. Can be used only if \code{input.type=="responses"} and 
+#'   \code{ip.method=="irtMCMC"}. See Jessee (2016).
+#'   \item \code{"olsmap"}: OLS mapping method, Based on anchor cases, 
+#'   use OLs regression to map \code{d2} ideal point coordinates on 
+#'   \code{d1} ideal point space. The procedure described in Shor et al. (2010). 
+#'   \item \code{"anchoredpooling"}: Use anchor cases to pool \code{d1} and \code{d2} 
+#'   and jointly compute ideal points. Issues/questions in two datasets are assumed 
+#'   to be independent from each other. See Shor et al. (2010) for more details.
 #' }
 #' @param anchors.method Method to select anchors to bridge ideal points. 
-#' Following values are currently available.
+#' Following values are currently available. 
+#' Ignored if \code{bridge.method} is \code{"joint"} or \code{"modelmap"}.
 #' \itemize{
 #'   \item \code{"subsample"} (default): Sample subset of \code{d1} and \code{d2} and 
 #'   use them as anchors. Sampled anchors from another dataset are added to the 
@@ -53,12 +62,12 @@
 #' @param anchors.subsample.pr Proportion of dataset (i.e., \code{d1} and \code{d2}) 
 #' to be sampled as anchor. The propotion is determined by the dataset of smaller size.
 #' Used when \code{anchors.method=="subsample"} and \code{anchors.subsample.method=="random"}.
-#' @param anchors.selectrows.d1 Must be positive integers.  
+#' @param anchors.selectrows.d1 Must be the vector of positive integers.  
 #' Specify the row numbers of anchors in \code{d1}. 
 #' If \code{anchors.method=="selectrows"}, must be the same length and with perfect correspondence with \code{anchors.selectrows.d2}.
 #' If \code{anchors.method=="subsample"} and \code{anchors.subsample.method=="selectrows"}, 
 #' the above condition is not required. 
-#' @param anchors.selectrows.d2 Must be positive integers.  
+#' @param anchors.selectrows.d2 Must be the vector of positive integers.  
 #' Specify the row numbers of anchors in \code{d2}.
 #' @param anchors.newdata Matrix or data.frame of anchors. Must have identical 
 #' columns as \code{d1} and \code{d2}. Used if \code{anchors.method=="newdata"}. 
@@ -68,8 +77,9 @@
 #' @param ip.method Method of ideal point computation (used only when \code{input.type=="response"}. Following values are currently available.
 #' \itemize{
 #'   \item \code{"ooc"} (default): Ordered optimal classification. Calls \code{\link{oocflex}} function.
-#'   \item \code{"oc"}: Optimal classification. Calls \code{\link[oc]{oc}} function from \code{oc} package.
-#'   \item \code{"wnominate"}: W-NOMINATE. Calls \code{\link[wnominate]{wnominate}} function from \code{wnominate} package.
+#'   \item \code{"blackbox"}: Blackbox scaling. Calls \code{\link[basicspace]{blackbox}} function from \code{blackbox} package (\code{minscale=10} by default).
+#'   \item \code{"oc"}: Optimal classification. Calls \code{\link[oc]{oc}} function from \code{oc} package (\code{polarity=c(1,1)} by default). 
+#'   \item \code{"wnominate"}: W-NOMINATE. Calls \code{\link[wnominate]{wnominate}} function from \code{wnominate} package  (\code{polarity=c(1,1)} by default).
 #'   \item \code{"irtMCMC"}: IRT model via Markov chain Monte Carlo method. Calls \code{\link[pscl]{ideal}} function from \code{pscl} package.
 #' }
 #' For \code{ip.method=="ooc"}, the inputs \code{d1} and \code{d2} must be positive integer. 
@@ -78,6 +88,12 @@
 #' @param ip.dims Number of dimension in ideal point computation. Must be a positive 
 #' integer between 1 and 10. If \code{bridge.method=="homography"}, only 2 is accepted 
 #' at this point.  
+#' @param ip.polarity.d1 A vector specifying the row number of the \code{d1}(or pooled data)'s respondent(s) 
+#' constrained to have a positive (i.e., right-wing or conservative) score on each dimension.
+#' Used when \code{ip.method} is \code{"ooc"}, \code{"oc"}, or \code{"wnominate"}. 
+#' @param ip.polarity.d2 A vector specifying the row number of the \code{d2}'s respondent(s) 
+#' constrained to have a positive (i.e., right-wing or conservative) score on each dimension. 
+#' Used when \code{ip.method} is \code{"ooc"}, \code{"oc"}, or \code{"wnominate"}. 
 #' @param hg.opt.iter.n Used if \code{bridge.method=="homography"}. 
 #' Number of iteration in the optimization of transformation matrix.
 #' @param hg.opt.sample.n Used if \code{bridge.method=="homography"}. 
@@ -122,6 +138,7 @@
 #' @import ooc
 #' @import wnominate
 #' @import pscl
+#' @import basicspace
 #' 
 #' @export
 
@@ -136,6 +153,8 @@ ipbridging <- function(d1, d2,
                        input.type="responses",
                        ip.method="ooc", 
                        ip.dims=2,
+                       ip.polarity.d1 = c(1,1),
+                       ip.polarity.d2 = c(1,1),
                        hg.opt.iter.n = 10000,
                        hg.opt.sample.n = 30,
                        hg.opt.th.inline = 0.5,
@@ -164,43 +183,61 @@ ipbridging <- function(d1, d2,
                        isanchor = 0)
   
   cat(paste0("\nBridging ideal points through ", bridge.method," method:\n\n"))
-      
-  ## Pooling As a Bridging Method
-  if (bridge.method=="pooling") {
+  
+  ## Joint scaling As a Bridging Method
+  if (bridge.method=="joint") {
 
     if (ncol(d1)!=ncol(d2)) stop("d1 and d2 must have the same number of columns!")
     
     if (input.type=="idealpoints") {
       
-      stop('input.type=="idealpoints" is incompatible with bridge.method=="pooling"!')
+      stop('input.type=="idealpoints" is incompatible with bridge.method=="joint"!')
       
     } else if (input.type=="responses") {
       
       cat("Generating bridged ideal points...\n")
       
-      # Anchor Identifier (NA in pooling)
+      # Anchor Identifier (NA in joint)
       respdt$isanchor <- NA
 
       # Estimate Ideal Points
       if (ip.method=="ooc") {
         
-        ip_pooled_f <- oocflex(rbind(d1,d2), dims=ip.dims, ...)
-        ip_pooled <- ip_pooled_f$respondents[,grepl("coord", colnames(ip_pooled_f$respondents))]
+        ip_joint_f <- oocflex(rbind(d1,d2), dims=ip.dims, polarity=ip.polarity.d1, ...)
+        ip_joint <- ip_joint_f$respondents[,grepl("coord", colnames(ip_joint_f$respondents))]
         
       } else if (ip.method=="oc") {
         
-        ip_pooled_f <- oc(rollcall(rbind(d1,d2)), dims=ip.dims, ...)
-        ip_pooled <- ip_pooled_f$legislators[,grepl("coord", colnames(ip_pooled_f$legislators))]
+        ip_joint_f <- oc(rollcall(rbind(d1,d2)), dims=ip.dims, polarity=ip.polarity.d1, ...)
+        ip_joint <- ip_joint_f$legislators[,grepl("coord", colnames(ip_joint_f$legislators))]
 
       } else if (ip.method=="wnominate") {
         
-        ip_pooled_f <- wnominate(rollcall(rbind(d1,d2)), dims=ip.dims, ...)
-        ip_pooled <- ip_pooled_f$legislators[,grepl("coord", colnames(ip_pooled_f$legislators))]
+        ip_joint_f <- wnominate(rollcall(rbind(d1,d2)), dims=ip.dims, polarity=ip.polarity.d1, ...)
+        ip_joint <- ip_joint_f$legislators[,grepl("coord", colnames(ip_joint_f$legislators))]
         
       } else if (ip.method=="irtMCMC") {
         
-        ip_pooled_f <- ideal(rollcall(rbind(d1,d2)), d=ip.dims, ...)
-        ip_pooled <- ip_pooled_f$xbar
+        ip_joint_f <- ideal(rollcall(rbind(d1,d2)), d=ip.dims, ...)
+        ip_joint <- ip_joint_f$xbar
+        
+      } else if (ip.method=="blackbox") {
+        
+        # Check if minscale argument is manually set
+        # *minscale has no default in blackbox function
+        set.minscale <- TRUE
+        if (length(list(...))>0) {
+          if ("minscale"%in%names(list(...))) set.minscale <- FALSE
+        }  
+        
+        # Blackbox Scaling
+        if (set.minscale) {
+          # Set minscale to 10 if not manually set
+          ip_joint_f <- blackbox(rbind(d1,d2), dims=ip.dims, minscale=10, ...)
+        } else {
+          ip_joint_f <- blackbox(rbind(d1,d2), dims=ip.dims, ...)
+        }
+        ip_joint <- ip_joint_f$individuals[[ip.dims]]
         
       } else {
         
@@ -215,15 +252,15 @@ ipbridging <- function(d1, d2,
     }
     
     ## Add IP values to respdt
-    for(i in 1:ncol(ip_pooled)) respdt[,paste0("bridged",i,"D")] <- ip_pooled[,i]
-    for(i in 1:ncol(ip_pooled)) respdt[,paste0("ip1_coord",i,"D")] <- NA
-    for(i in 1:ncol(ip_pooled)) respdt[,paste0("ip2_coord",i,"D")] <- NA
+    for(i in 1:ncol(ip_joint)) respdt[,paste0("bridged",i,"D")] <- ip_joint[,i]
+    for(i in 1:ncol(ip_joint)) respdt[,paste0("ip1_coord",i,"D")] <- NA
+    for(i in 1:ncol(ip_joint)) respdt[,paste0("ip2_coord",i,"D")] <- NA
     
     cat("DONE!\n\n")
     
     ## Compile Output
     out <- list(bridge.data = respdt, 
-                bridge.model = ip_pooled_f,
+                bridge.model = ip_joint_f,
                 bridge.method = bridge.method, 
                 ip.model.d1 = NULL,
                 ip.model.d2 = NULL,
@@ -363,22 +400,22 @@ ipbridging <- function(d1, d2,
       cat("Generating ideal points on subsets...\n")
       if (ip.method=="ooc") {
         
-        ip1_f <- oocflex(d1x, dims=ip.dims, ...)
-        ip2_f <- oocflex(d2x, dims=ip.dims, ...)
+        ip1_f <- oocflex(d1x, dims=ip.dims, polarity=ip.polarity.d1, ...)
+        ip2_f <- oocflex(d2x, dims=ip.dims, polarity=ip.polarity.d2, ...)
         ip1 <- ip1_f$respondents[,grepl("coord", colnames(ip1_f$respondents))]
         ip2 <- ip2_f$respondents[,grepl("coord", colnames(ip2_f$respondents))]
         
       } else if (ip.method=="oc") {
         
-        ip1_f <- oc(rollcall(d1x), dims=ip.dims, ...)
-        ip2_f <- oc(rollcall(d2x), dims=ip.dims, ...)
+        ip1_f <- oc(rollcall(d1x), dims=ip.dims, polarity=ip.polarity.d1, ...)
+        ip2_f <- oc(rollcall(d2x), dims=ip.dims, polarity=ip.polarity.d2, ...)
         ip1 <- ip1_f$legislators[,grepl("coord", colnames(ip1_f$legislators))]
         ip2 <- ip2_f$legislators[,grepl("coord", colnames(ip2_f$legislators))]
         
       } else if (ip.method=="wnominate") {
         
-        ip1_f <- wnominate(rollcall(d1x), dims=ip.dims, ...)
-        ip2_f <- wnominate(rollcall(d2x), dims=ip.dims, ...)
+        ip1_f <- wnominate(rollcall(d1x), dims=ip.dims, polarity=ip.polarity.d1, ...)
+        ip2_f <- wnominate(rollcall(d2x), dims=ip.dims, polarity=ip.polarity.d2, ...)
         ip1 <- ip1_f$legislators[,grepl("coord", colnames(ip1_f$legislators))]
         ip2 <- ip2_f$legislators[,grepl("coord", colnames(ip2_f$legislators))]
         
@@ -388,6 +425,27 @@ ipbridging <- function(d1, d2,
         ip2_f <- ideal(rollcall(d2x), d=ip.dims, ...)
         ip1 <- ip1_f$xbar
         ip2 <- ip2_f$xbar
+        
+      } else if (ip.method=="blackbox") {
+        
+        # Check if minscale argument is manually set
+        # *minscale has no default in original blackbox function
+        set.minscale <- TRUE
+        if (length(list(...))>0) {
+          if ("minscale"%in%names(list(...))) set.minscale <- FALSE
+        }  
+        
+        # Blackbox Scaling
+        if (set.minscale) {
+          # Set minscale to 10 if not manually set
+          ip1_f <- blackbox(d1, dims=ip.dims, minscale=10, ...)
+          ip2_f <- blackbox(d2, dims=ip.dims, minscale=10, ...)
+        } else {
+          ip1_f <- blackbox(d1, dims=ip.dims, ...)
+          ip2_f <- blackbox(d2, dims=ip.dims, ...)
+        }
+        ip1 <- ip1_f$individuals[[ip.dims]]
+        ip2 <- ip2_f$individuals[[ip.dims]]
         
       } else {
         
@@ -470,7 +528,147 @@ ipbridging <- function(d1, d2,
                 input.type = input.type,
                 anchors.method = anchors.method)
     return(out)
+  
+  # Mapping using Model Prediction from Only One Group (Only Bayesian IRT)        
+  } else if (bridge.method=="modelmap") {
+    
+    if (input.type=="idealpoints"|ip.method!="irtMCMC") {
+      stop("To use bridge.method='modelmap', input.type must be 'responses' and ip.method must be 'irtMCMC'!")
+    }
+    
+    ip_mmap_f <- ideal(rollcall(rbind(d1,d2)), d=ip.dims, 
+                       use.voter=c(rep(TRUE,nrow(d1)),rep(FALSE,nrow(d2))), ...)
+    ip_mmap <- ip_mmap_f$xbar
+    
+    ## Add IP values to respdt
+    for(i in 1:ncol(ip_mmap)) respdt[,paste0("bridged",i,"D")] <- ip_mmap[,i]
+    for(i in 1:ncol(ip_mmap)) respdt[,paste0("ip1_coord",i,"D")] <- NA
+    for(i in 1:ncol(ip_mmap)) respdt[,paste0("ip2_coord",i,"D")] <- NA
+    
+    cat("DONE!\n\n")
+    
+    ## Compile Output
+    out <- list(bridge.data = respdt, 
+                bridge.model = ip_mmap_f,
+                bridge.method = bridge.method, 
+                ip.model.d1 = NULL,
+                ip.model.d2 = NULL,
+                ip.method = ip.method,
+                ip.dims = ip.dims,
+                input.type = input.type,
+                anchors.method = NULL)
+    return(out)
+
+  } else if (bridge.method=="anchoredpooling") {
+    
+    if (ncol(d1)!=ncol(d2)) stop("d1 and d2 must have the same number of columns!")
+    
+    if (input.type=="idealpoints") {
+      
+      stop('input.type=="idealpoints" is incompatible with bridge.method=="joint"!')
+      
+    } else if (input.type=="responses") {
+      
+      if (anchors.method!="selectrows") stop("anchors.method must be 'selectrows'!")
+      
+      if (length(anchors.selectrows.d1)!=length(anchors.selectrows.d2)) {
+        stop("anchors.selectrows.d1 and anchors.selectrows.d2 must have the same length!")
+      }
+      
+      # Update respdt
+      respdt$isanchor[anchors.selectrows.d1] <- 1
+      respdt$isanchor[anchors.selectrows.d2+nrow(d1)] <- 1
+      
+      ## Dataset for Ideal Point Computation
+      d1x <- cbind(d1[-anchors.selectrows.d1,], 
+                   matrix(NA,ncol=ncol(d2),nrow=nrow(d1[-anchors.selectrows.d1,])))
+      d2x <- cbind(matrix(NA,ncol=ncol(d1),nrow=nrow(d2[-anchors.selectrows.d2,])),
+                   d2[-anchors.selectrows.d2,])
+      dx <- rbind(d1x,d2x,cbind(d1[anchors.selectrows.d1,],
+                                d2[anchors.selectrows.d2,]))
+
+      cat("Generating bridged ideal points...\n")
+      
+      # Anchor Identifier (NA in joint)
+      respdt$isanchor <- NA
+      
+      # Estimate Ideal Points
+      if (ip.method=="ooc") {
         
+        ip_pooled_f <- oocflex(dx, dims=ip.dims, polarity=ip.polarity.d1, ...)
+        ip_pooled <- ip_pooled_f$respondents[,grepl("coord", colnames(ip_pooled_f$respondents))]
+        
+      } else if (ip.method=="oc") {
+        
+        ip_pooled_f <- oc(rollcall(rbind(d1,d2)), dims=ip.dims, polarity=ip.polarity.d1, ...)
+        ip_pooled <- ip_pooled_f$legislators[,grepl("coord", colnames(ip_pooled_f$legislators))]
+        
+      } else if (ip.method=="wnominate") {
+        
+        ip_pooled_f <- wnominate(rollcall(rbind(d1,d2)), dims=ip.dims, polarity=ip.polarity.d1, ...)
+        ip_pooled <- ip_pooled_f$legislators[,grepl("coord", colnames(ip_pooled_f$legislators))]
+        
+      } else if (ip.method=="irtMCMC") {
+        
+        ip_pooled_f <- ideal(rollcall(rbind(d1,d2)), d=ip.dims, ...)
+        ip_pooled <- ip_pooled_f$xbar
+        
+      } else if (ip.method=="blackbox") {
+        
+        # Check if minscale argument is manually set
+        # *minscale has no default in blackbox function
+        set.minscale <- TRUE
+        if (length(list(...))>0) {
+          if ("minscale"%in%names(list(...))) set.minscale <- FALSE
+        }  
+        
+        # Blackbox Scaling
+        if (set.minscale) {
+          # Set minscale to 10 if not manually set
+          ip_pooled_f <- blackbox(rbind(d1,d2), dims=ip.dims, minscale=10, ...)
+        } else {
+          ip_pooled_f <- blackbox(rbind(d1,d2), dims=ip.dims, ...)
+        }
+        ip_pooled <- ip_pooled_f$individuals[[ip.dims]]
+        
+      } else {
+        
+        stop("Invalid 'ip.method' value!")
+        
+      }
+      
+    } else {
+      
+      stop("Invalid 'input.type' value!")
+      
+    }
+    
+    ## Add IP values to respdt
+    acrows <- c(anchors.selectrows.d1,anchors.selectrows.d2+nrow(d1))
+    for(i in 1:ncol(ip_pooled)) {
+      respdt[,paste0("bridged",i,"D")] <- NA
+      respdt[-acrows,paste0("bridged",i,"D")] <- 
+        ip_pooled[seq(1,nrow(d1x)+nrow(d2x)),i]
+      respdt[anchors.selectrows.d1,paste0("bridged",i,"D")] <- 
+        ip_pooled[-seq(1,nrow(d1x)+nrow(d2x)),i]
+    }
+    for(i in 1:ncol(ip_pooled)) respdt[,paste0("ip1_coord",i,"D")] <- NA
+    for(i in 1:ncol(ip_pooled)) respdt[,paste0("ip2_coord",i,"D")] <- NA
+    
+    cat("DONE!\n\n")
+    
+    ## Compile Output
+    out <- list(bridge.data = respdt, 
+                bridge.model = ip_pooled_f,
+                bridge.method = bridge.method, 
+                ip.model.d1 = NULL,
+                ip.model.d2 = NULL,
+                ip.method = ip.method,
+                ip.dims = ip.dims,
+                input.type = input.type,
+                anchors.method = "selectrows")
+    return(out)
+    
   } else {
     
     stop("Invalid 'bridge.method' value!")

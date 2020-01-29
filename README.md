@@ -24,7 +24,7 @@ Alternatively, you could install <code>oc</code> package from github CRAN mirror
 
 <code>devtools::install_github("cran/oc")</code>
 
-Also, in case you want to use GPU accelerated method to tune SVM parameters in <code>oocflex</code> function, you need to install <code>Rgtsvm</code> package (check the GitHub repository [HERE](https://github.com/Danko-Lab/Rgtsvm)). You need to have PC with NVIDIA GPU and Linux OS to install <code>Rgtsvm</code> package.
+<!-- Also, in case you want to use GPU accelerated method to tune SVM parameters in <code>oocflex</code> function, you need to install <code>Rgtsvm</code> package (check the GitHub repository [HERE](https://github.com/Danko-Lab/Rgtsvm)). You need to have PC with NVIDIA GPU and Linux OS to install <code>Rgtsvm</code> package. -->
 
 ## Main Functions
 
@@ -33,6 +33,7 @@ Also, in case you want to use GPU accelerated method to tune SVM parameters in <
 
 ## Updates Log
 
+* 01/29/2020 Version 0.0.04 (beta version 5)
 * 01/22/2020 Version 0.0.03 (beta version 4)
 * 01/21/2020 Version 0.0.02 (beta version 3)
 * 01/20/2020 Version 0.0.01 (beta version 2)

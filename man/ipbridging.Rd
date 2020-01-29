@@ -9,6 +9,7 @@ ipbridging(d1, d2, bridge.method = "homography",
   anchors.subsample.method = "random", anchors.selectrows.d1 = 1:100,
   anchors.selectrows.d2 = 1:100, anchors.newdata = NULL,
   input.type = "responses", ip.method = "ooc", ip.dims = 2,
+  ip.polarity.d1 = c(1, 1), ip.polarity.d2 = c(1, 1),
   hg.opt.iter.n = 10000, hg.opt.sample.n = 30,
   hg.opt.th.inline = 0.5, hg.blend.th1 = 0.05, hg.blend.th2 = 0.15,
   ...)
@@ -27,16 +28,25 @@ columns are ideal point dimensions).}
 \item{bridge.method}{Method of bridging. Currently, following methods are aviailable:
 \itemize{
   \item \code{"homography"} (default): Homography transformation method. 
-  Non-parametric method to find optimal transformation matrix to bridge ideal point 
-  estimates (calls \code{\link{bridge.homography}}).
-  \item \code{"olsmap"}: Use OLs regression to map \code{d2} ideal point coordinates 
-  on \code{d1} ideal point space. The procedure described in Shor et al. (2010). 
-  \item \code{"pooling"}: Pooling method. Simple method to combine \code{d1} and 
-  \code{d2} to jointly compute ideal points. The procedure described in Jessee (2016).
+  Based on anchor cases, this method provides non-parametric procedure to 
+  find optimal transformation matrix to bridge ideal point estimates (calls \code{\link{bridge.homography}}).
+  \item \code{"joint"}: Joint scaling method. Simple method to combine \code{d1} and 
+  \code{d2} and jointly compute ideal points. The procedure described in Jessee (2016).
+  \item \code{"modelmap"}: Use the model estimated on \code{d1} to map
+  ideal point coordinates of \code{d2} respondents. This method does not require 
+  anchor cases. Can be used only if \code{input.type=="responses"} and 
+  \code{ip.method=="irtMCMC"}. See Jessee (2016).
+  \item \code{"olsmap"}: OLS mapping method, Based on anchor cases, 
+  use OLs regression to map \code{d2} ideal point coordinates on 
+  \code{d1} ideal point space. The procedure described in Shor et al. (2010). 
+  \item \code{"anchoredpooling"}: Use anchor cases to pool \code{d1} and \code{d2} 
+  and jointly compute ideal points. Issues/questions in two datasets are assumed 
+  to be independent from each other. See Shor et al. (2010) for more details.
 }}
 
 \item{anchors.method}{Method to select anchors to bridge ideal points. 
-Following values are currently available.
+Following values are currently available. 
+Ignored if \code{bridge.method} is \code{"joint"} or \code{"modelmap"}.
 \itemize{
   \item \code{"subsample"} (default): Sample subset of \code{d1} and \code{d2} and 
   use them as anchors. Sampled anchors from another dataset are added to the 
@@ -70,13 +80,13 @@ are currently available:
   (Two vectors does not have to have the same length).
 }}
 
-\item{anchors.selectrows.d1}{Must be positive integers.
+\item{anchors.selectrows.d1}{Must be the vector of positive integers.
 Specify the row numbers of anchors in \code{d1}. 
 If \code{anchors.method=="selectrows"}, must be the same length and with perfect correspondence with \code{anchors.selectrows.d2}.
 If \code{anchors.method=="subsample"} and \code{anchors.subsample.method=="selectrows"}, 
 the above condition is not required.}
 
-\item{anchors.selectrows.d2}{Must be positive integers.
+\item{anchors.selectrows.d2}{Must be the vector of positive integers.
 Specify the row numbers of anchors in \code{d2}.}
 
 \item{anchors.newdata}{Matrix or data.frame of anchors. Must have identical 
@@ -89,8 +99,9 @@ If \code{"idealpoints"}, dataset values are ideal points.}
 \item{ip.method}{Method of ideal point computation (used only when \code{input.type=="response"}. Following values are currently available.
 \itemize{
   \item \code{"ooc"} (default): Ordered optimal classification. Calls \code{\link{oocflex}} function.
-  \item \code{"oc"}: Optimal classification. Calls \code{\link[oc]{oc}} function from \code{oc} package.
-  \item \code{"wnominate"}: W-NOMINATE. Calls \code{\link[wnominate]{wnominate}} function from \code{wnominate} package.
+  \item \code{"blackbox"}: Blackbox scaling. Calls \code{\link[basicspace]{blackbox}} function from \code{blackbox} package (\code{minscale=10} by default).
+  \item \code{"oc"}: Optimal classification. Calls \code{\link[oc]{oc}} function from \code{oc} package (\code{polarity=c(1,1)} by default). 
+  \item \code{"wnominate"}: W-NOMINATE. Calls \code{\link[wnominate]{wnominate}} function from \code{wnominate} package  (\code{polarity=c(1,1)} by default).
   \item \code{"irtMCMC"}: IRT model via Markov chain Monte Carlo method. Calls \code{\link[pscl]{ideal}} function from \code{pscl} package.
 }
 For \code{ip.method=="ooc"}, the inputs \code{d1} and \code{d2} must be positive integer. 
@@ -100,6 +111,14 @@ All methods allow item non-response as NA.}
 \item{ip.dims}{Number of dimension in ideal point computation. Must be a positive 
 integer between 1 and 10. If \code{bridge.method=="homography"}, only 2 is accepted 
 at this point.}
+
+\item{ip.polarity.d1}{A vector specifying the row number of the \code{d1}(or pooled data)'s respondent(s) 
+constrained to have a positive (i.e., right-wing or conservative) score on each dimension.
+Used when \code{ip.method} is \code{"ooc"}, \code{"oc"}, or \code{"wnominate"}.}
+
+\item{ip.polarity.d2}{A vector specifying the row number of the \code{d2}'s respondent(s) 
+constrained to have a positive (i.e., right-wing or conservative) score on each dimension. 
+Used when \code{ip.method} is \code{"ooc"}, \code{"oc"}, or \code{"wnominate"}.}
 
 \item{hg.opt.iter.n}{Used if \code{bridge.method=="homography"}. 
 Number of iteration in the optimization of transformation matrix.}

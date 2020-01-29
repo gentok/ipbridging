@@ -4,13 +4,19 @@
 \alias{nv.svm}
 \title{Estimating Normal Vector through Support Vector Machine}
 \usage{
-nv.svm(xmat, resp, tune.param = "heuristics", use.gpu = FALSE,
-  param.heuristics.k = 3, ...)
+nv.svm(xmat, resp, kernel = "radial", tune.param = "heuristics",
+  use.gpu = FALSE, param.heuristics.k = 3,
+  param.heuristics.frac = 0.5, ...)
 }
 \arguments{
 \item{xmat}{Matrix of OC coordinates (i.e., predictors).}
 
 \item{resp}{Response Variable (i.e., ordered choices).}
+
+\item{kernel}{The kernel used in training and predicting. The 
+default is \code{"radial"} to use radial basis function (RBF). 
+The alterantaives are \code{"linear"}, \code{"polynomial"} or \code{"sigmoid"}. 
+See the help file of \code{\link[e1071]{svm}} for more details.}
 
 \item{tune.param}{Method to determine the parameters. 
 Following options are currently available:
@@ -19,16 +25,21 @@ Following options are currently available:
   or manually set parameter values. To manually set parameters.
   Check the available parameters (and their default values) in 
   \code{\link[e1071]{svm}} function in \code{e1071} package.
-  \item \code{"heuristics"} (default): If \code{resp} is numeric, 
+  \item \code{"heuristics"} (default): If \code{kernel=="radial"}, 
+  Use heuristics-based method (i.e., formulation identical to 
+  \code{\link[kernlab]{sigest}} in \code{kernlab} package) 
+  to determine optimal gamma. Additionally, if \code{resp} is numeric, 
   use heuristic based method described in Cherkassky & Ma (2004) to 
-  determine optimal parameters for C (cost) and epsilon.
+  determine optimal parameters for C (cost) and epsilon (epsilon-regression is 
+  automatically selected).
   If \code{resp} is a factor, the same behavior as \code{NULL}. 
   \item A named list of parameter vectors spanning the sampling space. 
   If list is assigned here, the method use \code{\link[e1071]{best.tune}} function
   to obtain the best perfomed model in the given parameter ranges. 
 }}
 
-\item{use.gpu}{If \code{TRUE}, the method replaces \code{\link[e1071]{best.tune}} 
+\item{use.gpu}{(THIS OPTION IS BETA VERSION, NOT CONFIRMED TO WORK) 
+If \code{TRUE}, the method replaces \code{\link[e1071]{best.tune}} 
 and \code{\link[e1071]{svm}} functions with 
 the \code{best.tune} and \code{svm} functions in \code{Rgtsvm} package, which contains
 GPU accelerate method of \code{svm} function. Install \code{Rgtsvm} manually. 
@@ -36,9 +47,13 @@ You need to have Linux computer with NVIDIA GPU for the installation.
 Check \url{https://github.com/Danko-Lab/Rgtsvm} for more details.}
 
 \item{param.heuristics.k}{If \code{tune.param=="heuristics"}, the method uses 
-k nearest neighbors regression to estimate the noise variance in response variable.
+k nearest neighbors regression to estimate the noise variance in response variable
+ for the detemination of epsilon.
 This argument sets k for this method. The default is 3. Cherkassky & Ma (2004) 
 recommends somewhere between 2 to 6.}
+
+\item{param.heuristics.frac}{Fraction of data to use for heuristics-based estimation of gamma. 
+By default, 50 percent of the data is used to estimate the range of the gamma hyperparameter.}
 
 \item{...}{Additional arguments passed to \code{\link[e1071]{svm}} 
 or \code{\link[e1071]{best.tune}}.}
@@ -47,7 +62,8 @@ or \code{\link[e1071]{best.tune}}.}
 A vector of coefficients.
 }
 \description{
-Estimating Normal Vector through Support Vector Machine
+Compute normal vector from OC coordinates and 
+ordered responses.
 }
 \references{
 \itemize{

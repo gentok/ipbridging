@@ -43,7 +43,7 @@ compute.nv <- function(xmat, resp, nv.method, ...) {
     } else if (nv.method=="ologit"){
       
       ## Ordinal Logit
-      coefs <- MASS::polr(factor(resp) ~ xmat, method="probit", ...)$coefficients
+      coefs <- MASS::polr(factor(resp) ~ xmat, method="logistic", ...)$coefficients
       
     } else if (nv.method%in%c("svm.reg","svm.class")){
       
