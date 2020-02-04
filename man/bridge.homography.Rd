@@ -6,7 +6,7 @@
 \usage{
 bridge.homography(ip1, ip2, anchorrows.ip1, anchorrows.ip2,
   opt.iter.n = 10000, opt.sample.n = 30, opt.th.inline = 0.5,
-  blend.th1 = 0.05, blend.th2 = 0.15)
+  blend = TRUE, blend.th1 = 0.05, blend.th2 = 0.15)
 }
 \arguments{
 \item{ip1}{Matrix or data.frame of 'reference' ideal points 
@@ -31,11 +31,13 @@ optimization.}
 optimization. A respondent is considered 'inline' if the distance between transformed
 \code{ip2} and \code{ip1} goes below this threshold.}
 
-\item{blend.th1}{First threshold used in 'blending' procedure. If minimum difference 
+\item{blend}{If \code{FALSE}, do not use blending procedure. The default is \code{TRUE}.}
+
+\item{blend.th1}{If \code{blend==TRUE}, first threshold used in 'blending' procedure. If minimum difference 
 between transformed \code{ip2} and \code{ip1} goes below this threshold, the 
 transformed \code{ip2} is replaced with the closest \code{ip1}.}
 
-\item{blend.th2}{Second threshold used in 'blending' procedure. If minimum difference 
+\item{blend.th2}{If \code{blend==TRUE}, second threshold used in 'blending' procedure. If minimum difference 
 between transformed \code{ip2} and \code{ip1} goes below this threshold (but above 
 \code{blend.th1}), the transformed \code{ip2} is replaced with the value that 
 intrapolates \code{ip1} that falls within this threshold.}

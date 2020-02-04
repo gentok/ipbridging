@@ -61,7 +61,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ipbridging</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.0.0</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.0.6</span>
       </span>
     </div>
 
@@ -105,7 +105,7 @@
 
     <pre class="usage"><span class='fu'>bridge.homography</span>(<span class='no'>ip1</span>, <span class='no'>ip2</span>, <span class='no'>anchorrows.ip1</span>, <span class='no'>anchorrows.ip2</span>,
   <span class='kw'>opt.iter.n</span> <span class='kw'>=</span> <span class='fl'>10000</span>, <span class='kw'>opt.sample.n</span> <span class='kw'>=</span> <span class='fl'>30</span>, <span class='kw'>opt.th.inline</span> <span class='kw'>=</span> <span class='fl'>0.5</span>,
-  <span class='kw'>blend.th1</span> <span class='kw'>=</span> <span class='fl'>0.05</span>, <span class='kw'>blend.th2</span> <span class='kw'>=</span> <span class='fl'>0.15</span>)</pre>
+  <span class='kw'>blend</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>blend.th1</span> <span class='kw'>=</span> <span class='fl'>0.05</span>, <span class='kw'>blend.th2</span> <span class='kw'>=</span> <span class='fl'>0.15</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -147,14 +147,18 @@ optimization. A respondent is considered 'inline' if the distance between transf
 <code>ip2</code> and <code>ip1</code> goes below this threshold.</p></td>
     </tr>
     <tr>
+      <th>blend</th>
+      <td><p>If <code>FALSE</code>, do not use blending procedure. The default is <code>TRUE</code>.</p></td>
+    </tr>
+    <tr>
       <th>blend.th1</th>
-      <td><p>First threshold used in 'blending' procedure. If minimum difference 
+      <td><p>If <code>blend==TRUE</code>, first threshold used in 'blending' procedure. If minimum difference 
 between transformed <code>ip2</code> and <code>ip1</code> goes below this threshold, the 
 transformed <code>ip2</code> is replaced with the closest <code>ip1</code>.</p></td>
     </tr>
     <tr>
       <th>blend.th2</th>
-      <td><p>Second threshold used in 'blending' procedure. If minimum difference 
+      <td><p>If <code>blend==TRUE</code>, second threshold used in 'blending' procedure. If minimum difference 
 between transformed <code>ip2</code> and <code>ip1</code> goes below this threshold (but above 
 <code>blend.th1</code>), the transformed <code>ip2</code> is replaced with the value that 
 intrapolates <code>ip1</code> that falls within this threshold.</p></td>

@@ -62,7 +62,7 @@ two separate datasets." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ipbridging</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.0.0</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.0.6</span>
       </span>
     </div>
 
@@ -106,13 +106,15 @@ two separate datasets.</p>
     </div>
 
     <pre class="usage"><span class='fu'>ipbridging</span>(<span class='no'>d1</span>, <span class='no'>d2</span>, <span class='kw'>bridge.method</span> <span class='kw'>=</span> <span class='st'>"homography"</span>,
-  <span class='kw'>anchors.method</span> <span class='kw'>=</span> <span class='st'>"subsample"</span>, <span class='kw'>anchors.subsample.pr</span> <span class='kw'>=</span> <span class='fl'>0.1</span>,
-  <span class='kw'>anchors.subsample.method</span> <span class='kw'>=</span> <span class='st'>"random"</span>, <span class='kw'>anchors.selectrows.d1</span> <span class='kw'>=</span> <span class='fl'>1</span>:<span class='fl'>100</span>,
+  <span class='kw'>anchors.method</span> <span class='kw'>=</span> <span class='st'>"subsample"</span>, <span class='kw'>anchors.subsample.method</span> <span class='kw'>=</span> <span class='st'>"random"</span>,
+  <span class='kw'>anchors.subsample.pr</span> <span class='kw'>=</span> <span class='fl'>0.1</span>, <span class='kw'>anchors.subsample.wgt.d1</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>anchors.subsample.wgt.d2</span> <span class='kw'>=</span> <span class='kw'>NULL</span>, <span class='kw'>anchors.selectrows.d1</span> <span class='kw'>=</span> <span class='fl'>1</span>:<span class='fl'>100</span>,
   <span class='kw'>anchors.selectrows.d2</span> <span class='kw'>=</span> <span class='fl'>1</span>:<span class='fl'>100</span>, <span class='kw'>anchors.newdata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>input.type</span> <span class='kw'>=</span> <span class='st'>"responses"</span>, <span class='kw'>ip.method</span> <span class='kw'>=</span> <span class='st'>"ooc"</span>, <span class='kw'>ip.dims</span> <span class='kw'>=</span> <span class='fl'>2</span>,
+  <span class='kw'>ip.polarity.d1</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='fl'>1</span>, <span class='fl'>1</span>), <span class='kw'>ip.polarity.d2</span> <span class='kw'>=</span> <span class='fu'>c</span>(<span class='fl'>1</span>, <span class='fl'>1</span>),
   <span class='kw'>hg.opt.iter.n</span> <span class='kw'>=</span> <span class='fl'>10000</span>, <span class='kw'>hg.opt.sample.n</span> <span class='kw'>=</span> <span class='fl'>30</span>,
-  <span class='kw'>hg.opt.th.inline</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>hg.blend.th1</span> <span class='kw'>=</span> <span class='fl'>0.05</span>, <span class='kw'>hg.blend.th2</span> <span class='kw'>=</span> <span class='fl'>0.15</span>,
-  <span class='no'>...</span>)</pre>
+  <span class='kw'>hg.opt.th.inline</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='kw'>hg.blend</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>, <span class='kw'>hg.blend.th1</span> <span class='kw'>=</span> <span class='fl'>0.05</span>,
+  <span class='kw'>hg.blend.th2</span> <span class='kw'>=</span> <span class='fl'>0.15</span>, <span class='no'>...</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -135,18 +137,27 @@ columns are ideal point dimensions).</p></td>
       <th>bridge.method</th>
       <td><p>Method of bridging. Currently, following methods are aviailable:</p><ul>
 <li><p><code>"homography"</code> (default): Homography transformation method. 
-  Non-parametric method to find optimal transformation matrix to bridge ideal point 
-  estimates (calls <code>bridge.homography</code>).</p></li>
-<li><p><code>"olsmap"</code>: Use OLs regression to map <code>d2</code> ideal point coordinates 
-  on <code>d1</code> ideal point space. The procedure described in Shor et al. (2010).</p></li>
-<li><p><code>"pooling"</code>: Pooling method. Simple method to combine <code>d1</code> and 
-  <code>d2</code> to jointly compute ideal points. The procedure described in Jessee (2016).</p></li>
+  Based on anchor cases, this method provides non-parametric procedure to 
+  find optimal transformation matrix to bridge ideal point estimates (calls <code><a href='bridge.homography.html'>bridge.homography</a></code>).</p></li>
+<li><p><code>"joint"</code>: Joint scaling method. Simple method to combine <code>d1</code> and 
+  <code>d2</code> and jointly compute ideal points. The procedure described in Jessee (2016).</p></li>
+<li><p><code>"modelmap"</code>: Use the model estimated on <code>d1</code> to map
+  ideal point coordinates of <code>d2</code> respondents. This method does not require 
+  anchor cases. Can be used only if <code>input.type=="responses"</code> and 
+  <code>ip.method=="irtMCMC"</code>. See Jessee (2016).</p></li>
+<li><p><code>"olsmap"</code>: OLS mapping method, Based on anchor cases, 
+  use OLs regression to map <code>d2</code> ideal point coordinates on 
+  <code>d1</code> ideal point space. The procedure described in Shor et al. (2010).</p></li>
+<li><p><code>"anchoredpooling"</code>: Use anchor cases to pool <code>d1</code> and <code>d2</code> 
+  and jointly compute ideal points. Issues/questions in two datasets are assumed 
+  to be independent from each other. See Shor et al. (2010) for more details.</p></li>
 </ul></td>
     </tr>
     <tr>
       <th>anchors.method</th>
       <td><p>Method to select anchors to bridge ideal points. 
-Following values are currently available.</p><ul>
+Following values are currently available. 
+Ignored if <code>bridge.method</code> is <code>"joint"</code> or <code>"modelmap"</code>.</p><ul>
 <li><p><code>"subsample"</code> (default): Sample subset of <code>d1</code> and <code>d2</code> and 
   use them as anchors. Sampled anchors from another dataset are added to the 
   target dataset when computing ideal points on each dataset. 
@@ -164,16 +175,14 @@ Following values are currently available.</p><ul>
 to have identical columns. This is not required for <code>"selectrows"</code>.</p></td>
     </tr>
     <tr>
-      <th>anchors.subsample.pr</th>
-      <td><p>Proportion of dataset (i.e., <code>d1</code> and <code>d2</code>) 
-to be sampled as anchor. The propotion is determined by the dataset of smaller size.
-Used when <code>anchors.method=="subsample"</code> and <code>anchors.subsample.method=="random"</code>.</p></td>
-    </tr>
-    <tr>
       <th>anchors.subsample.method</th>
       <td><p>Method to sample anchors. Following values 
 are currently available:</p><ul>
-<li><p><code>"random"</code> (default): randomly sample subset of dataset and 
+<li><p><code>"random"</code> (default): randomly sample subset of both datasets and 
+  use them as anchors. The sample size is determined by <code>anchors.subsample.pr</code>.</p></li>
+<li><p><code>"random.d1"</code>: randomly sample subset of <code>d1</code> and 
+  use them as anchors. The sample size is determined by <code>anchors.subsample.pr</code>.</p></li>
+<li><p><code>"random.d2"</code>: randomly sample subset of <code>d2</code> and 
   use them as anchors. The sample size is determined by <code>anchors.subsample.pr</code>.</p></li>
 <li><p><code>"selectrows"</code>: Use this option if specific anchors are already known (
   but not shared between datasets). Row numbers for anchors must be set 
@@ -182,8 +191,30 @@ are currently available:</p><ul>
 </ul></td>
     </tr>
     <tr>
+      <th>anchors.subsample.pr</th>
+      <td><p>Used when  <code>anchors.method=="subsample"</code>. 
+Proportion of dataset (i.e., <code>d1</code> and <code>d2</code>) 
+to be sampled as anchor. The propotion is determined by the dataset of smaller size if 
+<code>anchors.subsample.method=="random"</code>, specific dataset's size if 
+<code>anchors.subsample.method</code> is <code>"random.d1"</code> or <code>"random.d2"</code>.</p></td>
+    </tr>
+    <tr>
+      <th>anchors.subsample.wgt.d1</th>
+      <td><p>Optional weights passed to <code>prob</code> option of 
+<code><a href='http://www.rdocumentation.org/packages/base/topics/sample'>sample</a></code> function used in random sampling of anchors from <code>d1</code> when 
+<code>anchors.subsample.method</code> is <code>"random"</code> or <code>"random.d1"</code>. If not <code>NULL</code>, 
+it must be a vector of length equals to <code>nrow(d1)</code>.</p></td>
+    </tr>
+    <tr>
+      <th>anchors.subsample.wgt.d2</th>
+      <td><p>Optional weights passed to <code>prob</code> option of 
+<code><a href='http://www.rdocumentation.org/packages/base/topics/sample'>sample</a></code> function used in random sampling of anchors from <code>d2</code> when 
+<code>anchors.subsample.method</code> is <code>"random"</code> or <code>"random.d2"</code>. If not <code>NULL</code>, 
+it must be a vector of length equals to <code>nrow(d1)</code>.</p></td>
+    </tr>
+    <tr>
       <th>anchors.selectrows.d1</th>
-      <td><p>Must be positive integers.
+      <td><p>Must be the vector of positive integers.
 Specify the row numbers of anchors in <code>d1</code>. 
 If <code>anchors.method=="selectrows"</code>, must be the same length and with perfect correspondence with <code>anchors.selectrows.d2</code>.
 If <code>anchors.method=="subsample"</code> and <code>anchors.subsample.method=="selectrows"</code>, 
@@ -191,7 +222,7 @@ the above condition is not required.</p></td>
     </tr>
     <tr>
       <th>anchors.selectrows.d2</th>
-      <td><p>Must be positive integers.
+      <td><p>Must be the vector of positive integers.
 Specify the row numbers of anchors in <code>d2</code>.</p></td>
     </tr>
     <tr>
@@ -208,9 +239,10 @@ If <code>"idealpoints"</code>, dataset values are ideal points.</p></td>
     <tr>
       <th>ip.method</th>
       <td><p>Method of ideal point computation (used only when <code>input.type=="response"</code>. Following values are currently available.</p><ul>
-<li><p><code>"ooc"</code> (default): Ordered optimal classification. Calls <code>oocflex</code> function.</p></li>
-<li><p><code>"oc"</code>: Optimal classification. Calls <code><a href='http://www.rdocumentation.org/packages/oc/topics/oc'>oc</a></code> function from <code>oc</code> package.</p></li>
-<li><p><code>"wnominate"</code>: W-NOMINATE. Calls <code><a href='http://www.rdocumentation.org/packages/wnominate/topics/wnominate'>wnominate</a></code> function from <code>wnominate</code> package.</p></li>
+<li><p><code>"ooc"</code> (default): Ordered optimal classification. Calls <code><a href='oocflex.html'>oocflex</a></code> function.</p></li>
+<li><p><code>"blackbox"</code>: Blackbox scaling. Calls <code><a href='http://www.rdocumentation.org/packages/basicspace/topics/blackbox'>blackbox</a></code> function from <code>blackbox</code> package (<code>minscale=10</code> by default).</p></li>
+<li><p><code>"oc"</code>: Optimal classification. Calls <code><a href='http://www.rdocumentation.org/packages/oc/topics/oc'>oc</a></code> function from <code>oc</code> package (<code>polarity=c(1,1)</code> by default).</p></li>
+<li><p><code>"wnominate"</code>: W-NOMINATE. Calls <code><a href='http://www.rdocumentation.org/packages/wnominate/topics/wnominate'>wnominate</a></code> function from <code>wnominate</code> package  (<code>polarity=c(1,1)</code> by default).</p></li>
 <li><p><code>"irtMCMC"</code>: IRT model via Markov chain Monte Carlo method. Calls <code><a href='http://www.rdocumentation.org/packages/pscl/topics/ideal'>ideal</a></code> function from <code>pscl</code> package.</p></li>
 </ul><p>For <code>ip.method=="ooc"</code>, the inputs <code>d1</code> and <code>d2</code> must be positive integer. 
 For all other methods, the inputs must be a dummy variable indication 0=Nay and 1=Yea (and 9 for unit nonresponse).
@@ -221,6 +253,18 @@ All methods allow item non-response as NA.</p></td>
       <td><p>Number of dimension in ideal point computation. Must be a positive 
 integer between 1 and 10. If <code>bridge.method=="homography"</code>, only 2 is accepted 
 at this point.</p></td>
+    </tr>
+    <tr>
+      <th>ip.polarity.d1</th>
+      <td><p>A vector specifying the row number of the <code>d1</code>(or pooled data)'s respondent(s) 
+constrained to have a positive (i.e., right-wing or conservative) score on each dimension.
+Used when <code>ip.method</code> is <code>"ooc"</code>, <code>"oc"</code>, or <code>"wnominate"</code>.</p></td>
+    </tr>
+    <tr>
+      <th>ip.polarity.d2</th>
+      <td><p>A vector specifying the row number of the <code>d2</code>'s respondent(s) 
+constrained to have a positive (i.e., right-wing or conservative) score on each dimension. 
+Used when <code>ip.method</code> is <code>"ooc"</code>, <code>"oc"</code>, or <code>"wnominate"</code>.</p></td>
     </tr>
     <tr>
       <th>hg.opt.iter.n</th>
@@ -239,6 +283,12 @@ optimization.</p></td>
 Upper bound to determine inline respondents at each iteration of 
 optimization. A respondent is considered 'inline' if the distance between transformed
 <code>ip2</code> and <code>ip1</code> goes below this threshold.</p></td>
+    </tr>
+    <tr>
+      <th>hg.blend</th>
+      <td><p>Used if <code>bridge.method=="homography"</code>. 
+If <code>FALSE</code>, do not use blending procedure in homograhy transformation. 
+The default is <code>TRUE</code>.</p></td>
     </tr>
     <tr>
       <th>hg.blend.th1</th>
@@ -279,7 +329,7 @@ called in <code>ip.method</code>.</p></td>
     
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
-    <div class='dont-index'><p><code>bridge.homography</code>, <code>oocflex</code>, <code><a href='http://www.rdocumentation.org/packages/oc/topics/oc'>oc</a></code>, 
+    <div class='dont-index'><p><code><a href='bridge.homography.html'>bridge.homography</a></code>, <code><a href='oocflex.html'>oocflex</a></code>, <code><a href='http://www.rdocumentation.org/packages/oc/topics/oc'>oc</a></code>, 
 <code><a href='http://www.rdocumentation.org/packages/wnominate/topics/wnominate'>wnominate</a></code>, <code><a href='http://www.rdocumentation.org/packages/pscl/topics/ideal'>ideal</a></code></p></div>
     
 

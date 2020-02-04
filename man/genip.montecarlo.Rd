@@ -5,10 +5,9 @@
 \title{Generate Simulated Responses of Respondents with Ideal Points}
 \usage{
 genip.montecarlo(n = 1200, q = 20, ncat = 5, ndim = 2,
-  missing = 0.1, g1.size = 0.5, utility.diff.level = 1,
-  correlations.lim.g1 = c(-0.1, 0.7), correlations.lim.g2 = c(-0.1,
-  0.7), error.respondents = c(0.1, 1), error.issues = c(2, 1),
-  idealpoints.lim = c(-2, 2))
+  missing = 0.1, correlations.lim = c(-0.1, 0.7),
+  utility.probs = c(0.33, 0.33, 0.33), error.respondents = c(0.1, 1),
+  error.issues = c(2, 1), idealpoints.lim = c(-2, 2))
 }
 \arguments{
 \item{n}{Number of respondents.}
@@ -21,23 +20,13 @@ genip.montecarlo(n = 1200, q = 20, ncat = 5, ndim = 2,
 
 \item{missing}{Proportion of missing responses. Ranges from 0-1.}
 
-\item{g1.size}{Size of the first group defined as proportion (0-1 range). 
-The second group's size is \code{1-g1.size}.}
-
-\item{utility.diff.level}{Must be a positive integer, default is 1. 
-In this simulation, the value of \code{correlations} is potentially related to the 
-likely set of utility function form, that converts ideal points into ordered survey 
-responses. \code{utility.diff.level} deterimines the extent of differences in likely 
-utility function forms (randomly selected from linear, normal, and qudratic utility functions, 
-with some probability weights). The value of 1 indicates no relationship between 
-\code{correlations} and likely utility function forms, and higher values indicate 
-more extreme relationship between \code{correlations} and likely utility function forms.}
-
-\item{correlations.lim.g1}{Limits in the range of correlation between respondents and issues in the group 1. 
-Higher value indicates stronger association between respondent's values and their 
+\item{correlations.lim}{Limits in the range of correlation between respondents 
+and issues. Higher value indicates stronger association between respondent's values and their 
 ideal points in the issue.}
 
-\item{correlations.lim.g2}{Limits in the range of correlation between respondents and issues in the group 2.}
+\item{utility.probs}{Utility function is selected randomly from 
+three options -- "linear","normal","quadratic". This argument defines sampling weights 
+for utility functions.}
 
 \item{error.respondents}{The lower and upper limits of uniform distribution that are used to initiate values of respondents.}
 
@@ -57,7 +46,6 @@ A list with the following elements
   \item \code{heteroskedastic.issues}: Initial values assigned to issues.
   \item \code{correlations}: Correlation between ideal point dimensions.
   \item \code{knowledge}: Correlation binned into three categories.
-  \item \code{groups}: Group identifiers.
   \item \code{error}: Proportions of incorrect choices.
 }
 }

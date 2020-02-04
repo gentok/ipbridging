@@ -8,20 +8,12 @@
 #' @param ncat Number of ordered category in responses.
 #' @param ndim Number of dimentions in ideal points.
 #' @param missing Proportion of missing responses. Ranges from 0-1.
-#' @param g1.size Size of the first group defined as proportion (0-1 range). 
-#' The second group's size is \code{1-g1.size}. 
-#' @param correlations.lim.g1 Limits in the range of correlation between respondents and issues in the group 1. 
-#' Higher value indicates stronger association between respondent's values and their 
+#' @param correlations.lim Limits in the range of correlation between respondents 
+#' and issues. Higher value indicates stronger association between respondent's values and their 
 #' ideal points in the issue.
-#' @param correlations.lim.g2 Limits in the range of correlation between respondents and issues in the group 2. 
-#' @param utility.diff.level Must be a positive integer, default is 1. 
-#' In this simulation, the value of \code{correlations} is potentially related to the 
-#' likely set of utility function form, that converts ideal points into ordered survey 
-#' responses. \code{utility.diff.level} deterimines the extent of differences in likely 
-#' utility function forms (randomly selected from linear, normal, and qudratic utility functions, 
-#' with some probability weights). The value of 1 indicates no relationship between 
-#'\code{correlations} and likely utility function forms, and higher values indicate 
-#' more extreme relationship between \code{correlations} and likely utility function forms.   
+#' @param utility.probs Utility function is selected randomly from 
+#' three options -- "linear","normal","quadratic". This argument defines sampling weights 
+#' for utility functions.  
 #' @param error.respondents The lower and upper limits of uniform distribution that are used to initiate values of respondents.
 #' @param error.issues The \code{shape} and \code{rate} parameter in \code{\link[stats]{rgamma}} distribution, respectively. Used to set initial values of issue positions. 
 #' @param idealpoints.lim Limits in the range of ideal points. The values outside 
@@ -37,7 +29,6 @@
 #'   \item \code{heteroskedastic.issues}: Initial values assigned to issues.
 #'   \item \code{correlations}: Correlation between ideal point dimensions.
 #'   \item \code{knowledge}: Correlation binned into three categories.
-#'   \item \code{groups}: Group identifiers.
 #'   \item \code{error}: Proportions of incorrect choices.
 #' }
 #' 
@@ -52,10 +43,8 @@ genip.montecarlo <- function(n=1200,
                            ncat=5,
                            ndim=2,
                            missing=0.1,
-                           g1.size = 0.5,
-                           utility.diff.level = 1,
-                           correlations.lim.g1=c(-0.1,0.7), 
-                           correlations.lim.g2=c(-0.1,0.7), 
+                           correlations.lim=c(-0.1,0.7), 
+                           utility.probs = c(0.33,0.33,0.33),
                            error.respondents=c(0.1,1), 
                            error.issues=c(2,1),
                            idealpoints.lim=c(-2,2)){
@@ -65,12 +54,8 @@ genip.montecarlo <- function(n=1200,
   heteroskedastic.respondents <- runif(n, error.respondents[1], error.respondents[2])
   ## Issues
   heteroskedastic.issues <- rgamma(q, error.issues[1], error.issues[2])
-  ## Groups
-  groups <- c(rep(1,floor(n*g1.size)),rep(2,n-floor(n*g1.size))) 
   ## Correlations b/w Each Respondent and Issues
-  correlations.g1 <- runif(floor(n*g1.size), correlations.lim.g1[1], correlations.lim.g1[2])
-  correlations.g2 <- runif(n - floor(n*g1.size), correlations.lim.g2[1], correlations.lim.g2[2])
-  correlations <- c(correlations.g1, correlations.g2)
+  correlations <- runif(n, correlations.lim[1], correlations.lim[2])
   knowledge <- statar::xtile(correlations, 3)
   #
   # 1.) Generate respondent ideal points
@@ -121,19 +106,7 @@ genip.montecarlo <- function(n=1200,
   #
   # 6.) Calculate utility and response probabilities
   #
-  ## Sampling two sets of utility weights 
-  utmp <- sample.int(utility.diff.level,6,replace=TRUE)
-  # Correlations in 0-1 Range
-  rtmp <- range(c(correlations.lim.g1, correlations.lim.g2))
-  stdcors <- (correlations - rtmp[1])/(rtmp[2]-rtmp[1])
-  # Correlations and Utility Function is Related
-  uprobs <- sapply(1:3, function(k) utmp[k]*stdcors + utmp[k+3]*(1-stdcors))
-  # 
-  utility.fun <- 
-    apply(uprobs, 1, function(k) sample(c("linear","normal","quadratic"), 1, prob=k))
-  # utility.fun <- sample(c("linear","normal","quadratic"), n, 
-  #                       replace=TRUE, prob=utility.probs)
-  #
+  utility.fun <- sample(c("linear","normal","quadratic"), n, prob=utility.probs)
   systematic.utility <- total.utility <- probmat <- list()
   for (j in 1:q){
     systematic.utility[[j]] <- matrix(NA, nrow=n, ncol=ncat)
@@ -199,7 +172,6 @@ genip.montecarlo <- function(n=1200,
               heteroskedastic.issues = heteroskedastic.issues,
               correlations = correlations,
               knowledge = knowledge,
-              groups = groups,
               error = (1 - (correctvotes / totalvotes))
   ))
   #

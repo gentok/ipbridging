@@ -32,7 +32,8 @@
 
 <meta property="og:title" content="Estimating Normal Vector through Support Vector Machine — nv.svm" />
 
-<meta property="og:description" content="Estimating Normal Vector through Support Vector Machine" />
+<meta property="og:description" content="Compute normal vector from OC coordinates and 
+ordered responses." />
 <meta name="twitter:card" content="summary" />
 
 
@@ -61,7 +62,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ipbridging</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.0.3</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.0.6</span>
       </span>
     </div>
 
@@ -99,12 +100,14 @@
 
     <div class="ref-description">
     
-    <p>Estimating Normal Vector through Support Vector Machine</p>
+    <p>Compute normal vector from OC coordinates and 
+ordered responses.</p>
     
     </div>
 
-    <pre class="usage"><span class='fu'>nv.svm</span>(<span class='no'>xmat</span>, <span class='no'>resp</span>, <span class='kw'>tune.param</span> <span class='kw'>=</span> <span class='st'>"heuristics"</span>, <span class='kw'>use.gpu</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
-  <span class='kw'>param.heuristics.k</span> <span class='kw'>=</span> <span class='fl'>3</span>, <span class='no'>...</span>)</pre>
+    <pre class="usage"><span class='fu'>nv.svm</span>(<span class='no'>xmat</span>, <span class='no'>resp</span>, <span class='kw'>kernel</span> <span class='kw'>=</span> <span class='st'>"radial"</span>, <span class='kw'>tune.param</span> <span class='kw'>=</span> <span class='st'>"heuristics"</span>,
+  <span class='kw'>use.gpu</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>, <span class='kw'>param.heuristics.k</span> <span class='kw'>=</span> <span class='fl'>3</span>,
+  <span class='kw'>param.heuristics.frac</span> <span class='kw'>=</span> <span class='fl'>0.5</span>, <span class='no'>...</span>)</pre>
     
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -118,6 +121,13 @@
       <td><p>Response Variable (i.e., ordered choices).</p></td>
     </tr>
     <tr>
+      <th>kernel</th>
+      <td><p>The kernel used in training and predicting. The 
+default is <code>"radial"</code> to use radial basis function (RBF). 
+The alterantaives are <code>"linear"</code>, <code>"polynomial"</code> or <code>"sigmoid"</code>. 
+See the help file of <code><a href='http://www.rdocumentation.org/packages/e1071/topics/svm'>svm</a></code> for more details.</p></td>
+    </tr>
+    <tr>
       <th>tune.param</th>
       <td><p>Method to determine the parameters. 
 Following options are currently available:</p><ul>
@@ -125,9 +135,13 @@ Following options are currently available:</p><ul>
   or manually set parameter values. To manually set parameters.
   Check the available parameters (and their default values) in 
   <code><a href='http://www.rdocumentation.org/packages/e1071/topics/svm'>svm</a></code> function in <code>e1071</code> package.</p></li>
-<li><p><code>"heuristics"</code> (default): If <code>resp</code> is numeric, 
+<li><p><code>"heuristics"</code> (default): If <code>kernel=="radial"</code>, 
+  Use heuristics-based method (i.e., formulation identical to 
+  <code><a href='http://www.rdocumentation.org/packages/kernlab/topics/sigest'>sigest</a></code> in <code>kernlab</code> package) 
+  to determine optimal gamma. Additionally, if <code>resp</code> is numeric, 
   use heuristic based method described in Cherkassky &amp; Ma (2004) to 
-  determine optimal parameters for C (cost) and epsilon.
+  determine optimal parameters for C (cost) and epsilon (epsilon-regression is 
+  automatically selected).
   If <code>resp</code> is a factor, the same behavior as <code>NULL</code>.</p></li>
 <li><p>A named list of parameter vectors spanning the sampling space. 
   If list is assigned here, the method use <code><a href='http://www.rdocumentation.org/packages/e1071/topics/tune'>best.tune</a></code> function
@@ -136,7 +150,8 @@ Following options are currently available:</p><ul>
     </tr>
     <tr>
       <th>use.gpu</th>
-      <td><p>If <code>TRUE</code>, the method replaces <code><a href='http://www.rdocumentation.org/packages/e1071/topics/tune'>best.tune</a></code> 
+      <td><p>(THIS OPTION IS BETA VERSION, NOT CONFIRMED TO WORK) 
+If <code>TRUE</code>, the method replaces <code><a href='http://www.rdocumentation.org/packages/e1071/topics/tune'>best.tune</a></code> 
 and <code><a href='http://www.rdocumentation.org/packages/e1071/topics/svm'>svm</a></code> functions with 
 the <code>best.tune</code> and <code>svm</code> functions in <code>Rgtsvm</code> package, which contains
 GPU accelerate method of <code>svm</code> function. Install <code>Rgtsvm</code> manually. 
@@ -146,9 +161,15 @@ Check <a href='https://github.com/Danko-Lab/Rgtsvm'>https://github.com/Danko-Lab
     <tr>
       <th>param.heuristics.k</th>
       <td><p>If <code>tune.param=="heuristics"</code>, the method uses 
-k nearest neighbors regression to estimate the noise variance in response variable.
+k nearest neighbors regression to estimate the noise variance in response variable
+ for the detemination of epsilon.
 This argument sets k for this method. The default is 3. Cherkassky &amp; Ma (2004) 
 recommends somewhere between 2 to 6.</p></td>
+    </tr>
+    <tr>
+      <th>param.heuristics.frac</th>
+      <td><p>Fraction of data to use for heuristics-based estimation of gamma. 
+By default, 50 percent of the data is used to estimate the range of the gamma hyperparameter.</p></td>
     </tr>
     <tr>
       <th>...</th>

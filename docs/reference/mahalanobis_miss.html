@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Function reference • ipbridging</title>
+<title>Mahalanobis distance (MD) for data with missing values — mahalanobis_miss • ipbridging</title>
 
 <!-- jquery -->
 <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha384-nrOSfDHtoPMzJHjVTdCopGqIqeYETSXhZDFyniQ8ZHcVy08QesyHcnOUpMpqnmWq" crossorigin="anonymous"></script>
@@ -30,7 +30,10 @@
 
 
 
-<meta property="og:title" content="Function reference" />
+<meta property="og:title" content="Mahalanobis distance (MD) for data with missing values — mahalanobis_miss" />
+
+<meta property="og:description" content="This function is a modified version of MDmiss function in modi package." />
+<meta name="twitter:card" content="summary" />
 
 
 
@@ -46,7 +49,7 @@
   </head>
 
   <body>
-    <div class="container template-reference-index">
+    <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -87,96 +90,89 @@
       </header>
 
 <div class="row">
-  <div class="contents col-md-9">
+  <div class="col-md-9 contents">
     <div class="page-header">
-      <h1>Reference</h1>
+    <h1>Mahalanobis distance (MD) for data with missing values</h1>
+    
+    <div class="hidden name"><code>mahalanobis_miss.Rd</code></div>
     </div>
 
-    <table class="ref-index">
+    <div class="ref-description">
+    
+    <p>This function is a modified version of <code>MDmiss</code> function in <code>modi</code> package.</p>
+    
+    </div>
 
-    <colgroup>
-      
-      <col class="alias" />
-      <col class="title" />
-    </colgroup>
-
-    <tbody>
-      <tr>
-        <th colspan="2">
-          <h2 id="section-all-functions" class="hasAnchor"><a href="#section-all-functions" class="anchor"></a>All functions</h2>
-          <p class="section-desc"></p>
-        </th>
-      </tr>
-      <tr>
-        
-        <td>
-          <p><code><a href="bridge.homography.html">bridge.homography()</a></code> </p>
-        </td>
-        <td><p>Bridging Two Ideal Point Estimates with Homography Transformation Method</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="bridge.olsmap.html">bridge.olsmap()</a></code> </p>
-        </td>
-        <td><p>Bridging Two Ideal Point Estimates with OLS Mapping</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="compute.nv.html">compute.nv()</a></code> </p>
-        </td>
-        <td><p>Compute Normal Vector</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="genip.montecarlo.html">genip.montecarlo()</a></code> </p>
-        </td>
-        <td><p>Generate Simulated Responses of Respondents with Ideal Points</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="ipbridging.html">ipbridging()</a></code> </p>
-        </td>
-        <td><p>Bridging Ideal Point Estimates from Two Data Sets</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="mahalanobis_miss.html">mahalanobis_miss()</a></code> </p>
-        </td>
-        <td><p>Mahalanobis distance (MD) for data with missing values</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="nv.krls.html">nv.krls()</a></code> </p>
-        </td>
-        <td><p>Estimating Normal Vector through Kernel Regularized Least Squares</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="nv.svm.html">nv.svm()</a></code> </p>
-        </td>
-        <td><p>Estimating Normal Vector through Support Vector Machine</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="oocflex.html">oocflex()</a></code> </p>
-        </td>
-        <td><p>Ordered Optimal Classification (Flexible Version)</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="summary.oocflexObject.html">summary(<i>&lt;oocflexObject&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>Ordered Optimal Classification Summary</p></td>
-      </tr>
-    </tbody>
+    <pre class="usage"><span class='fu'>mahalanobis_miss</span>(<span class='no'>data</span>, <span class='no'>center</span>, <span class='no'>cov</span>, <span class='no'>...</span>)</pre>
+    
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
+    <table class="ref-arguments">
+    <colgroup><col class="name" /><col class="desc" /></colgroup>
+    <tr>
+      <th>data</th>
+      <td><p>the data as a dataframe or matrix.</p></td>
+    </tr>
+    <tr>
+      <th>center</th>
+      <td><p>the center to be used (may not contain missing values).</p></td>
+    </tr>
+    <tr>
+      <th>cov</th>
+      <td><p>the covariance to be used (may not contain missing values).</p></td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td><p>Additional arguments passed to <a href='http://www.rdocumentation.org/packages/stats/topics/mahalanobis'>mahalanobis</a> if no 
+missing values exist.</p></td>
+    </tr>
     </table>
-  </div>
+    
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
+    <p>The function returns a vector of the (squared) Mahalanobis distances.</p>
+    
+    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
+
+    <p>For each observation the missing dimensions are omitted
+before calculating the MD. The MD contains a correction
+factor \(p/q\) to account for the number of observed values,
+where \(p\) is the number of variables and \(q\) is the number of
+observed dimensions for the particular observation.</p>
+<p>The function loops over the observations unless all values are non-missing.
+This is not optimal if only a few missingness patterns occur. 
+If no missing values occur
+the function returns the Mahalanobis distance.</p>
+    
+    <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>
+
+    <p>Béguin, C., and Hulliger, B. (2004). Multivariate outlier detection
+in incomplete survey data: The epidemic algorithm and transformed rank correlations.
+Journal of the Royal Statistical Society, A167 (Part 2.), pp. 275-294.</p>
+    
+    <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
+
+    <div class='dont-index'><p><a href='http://www.rdocumentation.org/packages/stats/topics/mahalanobis'>mahalanobis</a></p></div>
+    
+
+  </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
     <h2>Contents</h2>
     <ul class="nav nav-pills nav-stacked">
-      <li><a href="#section-all-functions">All functions</a></li>
-    </ul>
+      <li><a href="#arguments">Arguments</a></li>
+      
+      <li><a href="#value">Value</a></li>
+
+      <li><a href="#details">Details</a></li>
+
+      <li><a href="#references">References</a></li>
+
+      <li><a href="#see-also">See also</a></li>
+          </ul>
+
+    <h2>Author</h2>
+    
+Beat Hulliger (Original in <code>modi</code> package). Modified by Gento Kato.
+
   </div>
 </div>
 

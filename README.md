@@ -33,6 +33,8 @@ Alternatively, you could install <code>oc</code> package from github CRAN mirror
 
 ## Updates Log
 
+* 02/03/2020 Version 0.0.06 (beta version 7)
+* 01/29/2020 Version 0.0.05 (beta version 6)
 * 01/29/2020 Version 0.0.04 (beta version 5)
 * 01/22/2020 Version 0.0.03 (beta version 4)
 * 01/21/2020 Version 0.0.02 (beta version 3)

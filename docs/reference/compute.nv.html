@@ -61,7 +61,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ipbridging</a>
-        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.0.0</span>
+        <span class="label label-default" data-toggle="tooltip" data-placement="bottom" title="Released package">0.0.6</span>
       </span>
     </div>
 
@@ -122,9 +122,9 @@
 Following pre-defined methods are currently available:</p><ul>
 <li><p><code>"oprobit"</code>: Ordered probit regression (calls <code><a href='http://www.rdocumentation.org/packages/MASS/topics/polr'>polr</a></code> function from <code>MASS</code> package)</p></li>
 <li><p><code>"ologit"</code>: Ordered logistic regression (calls <code><a href='http://www.rdocumentation.org/packages/MASS/topics/polr'>polr</a></code> function from <code>MASS</code> package)</p></li>
-<li><p><code>"svm.reg"</code>: Support Vector Regression (calls <code>nv.svm</code> function)</p></li>
-<li><p><code>"svm.class"</code>: Support Vector Classification with dichotomized response (calls <code>nv.svm</code> function)</p></li>
-<li><p><code>"krls"</code>: Kernel Regularized Least Squares (calls <code>nv.krls</code> function).</p></li>
+<li><p><code>"svm.reg"</code>: Support Vector Regression (calls <code><a href='nv.svm.html'>nv.svm</a></code> function)</p></li>
+<li><p><code>"svm.class"</code>: Support Vector Classification with dichotomized response (calls <code><a href='nv.svm.html'>nv.svm</a></code> function)</p></li>
+<li><p><code>"krls"</code>: Kernel Regularized Least Squares (calls <code><a href='nv.krls.html'>nv.krls</a></code> function).</p></li>
 </ul><p>Alternatively, one can set custom made function that (at least) feeds in 
 <code>xmat</code> and <code>resp</code> arguments and returns the vector of coefficients 
 (the length must be equal to the number of columns of <code>xmat</code>).</p></td>

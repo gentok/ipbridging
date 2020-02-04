@@ -5,14 +5,15 @@
 \title{Bridging Ideal Point Estimates from Two Data Sets}
 \usage{
 ipbridging(d1, d2, bridge.method = "homography",
-  anchors.method = "subsample", anchors.subsample.pr = 0.1,
-  anchors.subsample.method = "random", anchors.selectrows.d1 = 1:100,
+  anchors.method = "subsample", anchors.subsample.method = "random",
+  anchors.subsample.pr = 0.1, anchors.subsample.wgt.d1 = NULL,
+  anchors.subsample.wgt.d2 = NULL, anchors.selectrows.d1 = 1:100,
   anchors.selectrows.d2 = 1:100, anchors.newdata = NULL,
   input.type = "responses", ip.method = "ooc", ip.dims = 2,
   ip.polarity.d1 = c(1, 1), ip.polarity.d2 = c(1, 1),
   hg.opt.iter.n = 10000, hg.opt.sample.n = 30,
-  hg.opt.th.inline = 0.5, hg.blend.th1 = 0.05, hg.blend.th2 = 0.15,
-  ...)
+  hg.opt.th.inline = 0.5, hg.blend = TRUE, hg.blend.th1 = 0.05,
+  hg.blend.th2 = 0.15, ...)
 }
 \arguments{
 \item{d1}{Matrix or data.frame of 'reference' responses.
@@ -65,20 +66,36 @@ Ignored if \code{bridge.method} is \code{"joint"} or \code{"modelmap"}.
 Note that \code{"subsample"} and \code{"newdata"} requires \code{d1} and \code{d2}
 to have identical columns. This is not required for \code{"selectrows"}.}
 
-\item{anchors.subsample.pr}{Proportion of dataset (i.e., \code{d1} and \code{d2}) 
-to be sampled as anchor. The propotion is determined by the dataset of smaller size.
-Used when \code{anchors.method=="subsample"} and \code{anchors.subsample.method=="random"}.}
-
 \item{anchors.subsample.method}{Method to sample anchors. Following values 
 are currently available: 
 \itemize{
-  \item \code{"random"} (default): randomly sample subset of dataset and 
+  \item \code{"random"} (default): randomly sample subset of both datasets and 
+  use them as anchors. The sample size is determined by \code{anchors.subsample.pr}.
+  \item \code{"random.d1"}: randomly sample subset of \code{d1} and 
+  use them as anchors. The sample size is determined by \code{anchors.subsample.pr}.
+  \item \code{"random.d2"}: randomly sample subset of \code{d2} and 
   use them as anchors. The sample size is determined by \code{anchors.subsample.pr}.
   \item \code{"selectrows"}: Use this option if specific anchors are already known (
   but not shared between datasets). Row numbers for anchors must be set 
   in \code{anchors.selectrows.d1} and \code{anchors.selectrows.d2}, respectively
   (Two vectors does not have to have the same length).
 }}
+
+\item{anchors.subsample.pr}{Used when  \code{anchors.method=="subsample"}. 
+Proportion of dataset (i.e., \code{d1} and \code{d2}) 
+to be sampled as anchor. The propotion is determined by the dataset of smaller size if 
+\code{anchors.subsample.method=="random"}, specific dataset's size if 
+\code{anchors.subsample.method} is \code{"random.d1"} or \code{"random.d2"}.}
+
+\item{anchors.subsample.wgt.d1}{Optional weights passed to \code{prob} option of 
+\code{\link[base]{sample}} function used in random sampling of anchors from \code{d1} when 
+\code{anchors.subsample.method} is \code{"random"} or \code{"random.d1"}. If not \code{NULL}, 
+it must be a vector of length equals to \code{nrow(d1)}.}
+
+\item{anchors.subsample.wgt.d2}{Optional weights passed to \code{prob} option of 
+\code{\link[base]{sample}} function used in random sampling of anchors from \code{d2} when 
+\code{anchors.subsample.method} is \code{"random"} or \code{"random.d2"}. If not \code{NULL}, 
+it must be a vector of length equals to \code{nrow(d1)}.}
 
 \item{anchors.selectrows.d1}{Must be the vector of positive integers.
 Specify the row numbers of anchors in \code{d1}. 
@@ -131,6 +148,10 @@ optimization.}
 Upper bound to determine inline respondents at each iteration of 
 optimization. A respondent is considered 'inline' if the distance between transformed
 \code{ip2} and \code{ip1} goes below this threshold.}
+
+\item{hg.blend}{Used if \code{bridge.method=="homography"}. 
+If \code{FALSE}, do not use blending procedure in homograhy transformation. 
+The default is \code{TRUE}.}
 
 \item{hg.blend.th1}{Used if \code{bridge.method=="homography"}. 
 First threshold used in 'blending' procedure. If minimum difference 

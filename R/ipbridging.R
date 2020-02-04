@@ -52,16 +52,30 @@
 #' @param anchors.subsample.method Method to sample anchors. Following values 
 #' are currently available: 
 #' \itemize{
-#'   \item \code{"random"} (default): randomly sample subset of dataset and 
+#'   \item \code{"random"} (default): randomly sample subset of both datasets and 
+#'   use them as anchors. The sample size is determined by \code{anchors.subsample.pr}.
+#'   \item \code{"random.d1"}: randomly sample subset of \code{d1} and 
+#'   use them as anchors. The sample size is determined by \code{anchors.subsample.pr}.
+#'   \item \code{"random.d2"}: randomly sample subset of \code{d2} and 
 #'   use them as anchors. The sample size is determined by \code{anchors.subsample.pr}.
 #'   \item \code{"selectrows"}: Use this option if specific anchors are already known (
 #'   but not shared between datasets). Row numbers for anchors must be set 
 #'   in \code{anchors.selectrows.d1} and \code{anchors.selectrows.d2}, respectively
 #'   (Two vectors does not have to have the same length).
 #' }
-#' @param anchors.subsample.pr Proportion of dataset (i.e., \code{d1} and \code{d2}) 
-#' to be sampled as anchor. The propotion is determined by the dataset of smaller size.
-#' Used when \code{anchors.method=="subsample"} and \code{anchors.subsample.method=="random"}.
+#' @param anchors.subsample.pr Used when  \code{anchors.method=="subsample"}. 
+#' Proportion of dataset (i.e., \code{d1} and \code{d2}) 
+#' to be sampled as anchor. The propotion is determined by the dataset of smaller size if 
+#' \code{anchors.subsample.method=="random"}, specific dataset's size if 
+#' \code{anchors.subsample.method} is \code{"random.d1"} or \code{"random.d2"}. 
+#' @param anchors.subsample.wgt.d1 Optional weights passed to \code{prob} option of 
+#' \code{\link[base]{sample}} function used in random sampling of anchors from \code{d1} when 
+#' \code{anchors.subsample.method} is \code{"random"} or \code{"random.d1"}. If not \code{NULL}, 
+#' it must be a vector of length equals to \code{nrow(d1)}. 
+#' @param anchors.subsample.wgt.d2 Optional weights passed to \code{prob} option of 
+#' \code{\link[base]{sample}} function used in random sampling of anchors from \code{d2} when 
+#' \code{anchors.subsample.method} is \code{"random"} or \code{"random.d2"}. If not \code{NULL}, 
+#' it must be a vector of length equals to \code{nrow(d1)}. 
 #' @param anchors.selectrows.d1 Must be the vector of positive integers.  
 #' Specify the row numbers of anchors in \code{d1}. 
 #' If \code{anchors.method=="selectrows"}, must be the same length and with perfect correspondence with \code{anchors.selectrows.d2}.
@@ -103,6 +117,9 @@
 #' Upper bound to determine inline respondents at each iteration of 
 #' optimization. A respondent is considered 'inline' if the distance between transformed
 #' \code{ip2} and \code{ip1} goes below this threshold.
+#' @param hg.blend Used if \code{bridge.method=="homography"}. 
+#' If \code{FALSE}, do not use blending procedure in homograhy transformation. 
+#' The default is \code{TRUE}.
 #' @param hg.blend.th1 Used if \code{bridge.method=="homography"}. 
 #' First threshold used in 'blending' procedure. If minimum difference 
 #' between transformed \code{ip2} and \code{ip1} goes below this threshold, the 
@@ -145,8 +162,10 @@
 ipbridging <- function(d1, d2, 
                        bridge.method = "homography", 
                        anchors.method = "subsample",
-                       anchors.subsample.pr = 0.1,
                        anchors.subsample.method = "random",
+                       anchors.subsample.pr = 0.1,
+                       anchors.subsample.wgt.d1 = NULL,
+                       anchors.subsample.wgt.d2 = NULL,
                        anchors.selectrows.d1 = 1:100,
                        anchors.selectrows.d2 = 1:100,
                        anchors.newdata = NULL,
@@ -158,6 +177,7 @@ ipbridging <- function(d1, d2,
                        hg.opt.iter.n = 10000,
                        hg.opt.sample.n = 30,
                        hg.opt.th.inline = 0.5,
+                       hg.blend = TRUE,
                        hg.blend.th1 = 0.05, 
                        hg.blend.th2 = 0.15,
                        ...) {
@@ -230,6 +250,9 @@ ipbridging <- function(d1, d2,
           if ("minscale"%in%names(list(...))) set.minscale <- FALSE
         }  
         
+        d1 <- as.data.frame(apply(d1, 2, as.numeric))
+        d2 <- as.data.frame(apply(d2, 2, as.numeric))
+
         # Blackbox Scaling
         if (set.minscale) {
           # Set minscale to 10 if not manually set
@@ -368,9 +391,31 @@ ipbridging <- function(d1, d2,
         if (anchors.subsample.method=="random") {
           
           ## Random Sample of Rows
-          sample.size <-  floor(min(nrow(d1),nrow(d2))*anchors.subsample.pr)
-          anchors.samplerows.d1 <- sample.int(nrow(d1), size = sample.size)
-          anchors.samplerows.d2 <- sample.int(nrow(d2), size = sample.size)
+          anchors.sample.size <-  floor(min(nrow(d1),nrow(d2))*anchors.subsample.pr)
+          anchors.samplerows.d1 <- sample.int(nrow(d1), 
+                                              size = anchors.sample.size,
+                                              prob = anchors.subsample.wgt.d1)
+          anchors.samplerows.d2 <- sample.int(nrow(d2), 
+                                              size = anchors.sample.size,
+                                              prob = anchors.subsample.wgt.d2)
+          
+        } else if (anchors.subsample.method=="random.d1") {
+          
+          ## Random Sample of Rows
+          anchors.sample.size <-  floor(nrow(d1)*anchors.subsample.pr)
+          anchors.samplerows.d1 <- sample.int(nrow(d1), 
+                                              size = anchors.sample.size,
+                                              prob = anchors.subsample.wgt.d1)
+          anchors.samplerows.d2 <- integer() 
+          
+        } else if (anchors.subsample.method=="random.d2") {
+          
+          ## Random Sample of Rows
+          anchors.sample.size <-  floor(nrow(d2)*anchors.subsample.pr)
+          anchors.samplerows.d1 <- integer() 
+          anchors.samplerows.d2 <- sample.int(nrow(d2), 
+                                              size = anchors.sample.size,
+                                              prob = anchors.subsample.wgt.d2)
           
         } else if (anchors.subsample.method=="selectrows") { 
           
@@ -387,8 +432,16 @@ ipbridging <- function(d1, d2,
         ## Update Dataset for Ideal Point Computation
         d1x <- rbind(d1, d2[anchors.samplerows.d2,])
         d2x <- rbind(d2, d1[anchors.samplerows.d1,])
-        anchorrows.ip1 <- c(anchors.samplerows.d1, seq(nrow(d1)+1,nrow(d1x)))
-        anchorrows.ip2 <- c(anchors.samplerows.d2, seq(nrow(d2)+1,nrow(d2x)))
+        if (nrow(d1x)>nrow(d1)) {
+          anchorrows.ip1 <- c(anchors.samplerows.d1, seq(nrow(d1)+1,nrow(d1x)))
+        } else {
+          anchorrows.ip1 <- anchors.samplerows.d1
+        }
+        if (nrow(d2x)>nrow(d2)) {
+          anchorrows.ip2 <- c(anchors.samplerows.d2, seq(nrow(d2)+1,nrow(d2x)))
+        } else {
+          anchorrows.ip2 <- anchors.samplerows.d2
+        }
         
       } else {
         
@@ -428,6 +481,8 @@ ipbridging <- function(d1, d2,
         
       } else if (ip.method=="blackbox") {
         
+        
+        
         # Check if minscale argument is manually set
         # *minscale has no default in original blackbox function
         set.minscale <- TRUE
@@ -435,14 +490,17 @@ ipbridging <- function(d1, d2,
           if ("minscale"%in%names(list(...))) set.minscale <- FALSE
         }  
         
+        d1x <- as.data.frame(apply(d1x, 2, as.numeric))
+        d2x <- as.data.frame(apply(d2x, 2, as.numeric))
+        
         # Blackbox Scaling
         if (set.minscale) {
           # Set minscale to 10 if not manually set
-          ip1_f <- blackbox(d1, dims=ip.dims, minscale=10, ...)
-          ip2_f <- blackbox(d2, dims=ip.dims, minscale=10, ...)
+          ip1_f <- blackbox(d1x, dims=ip.dims, minscale=10, ...)
+          ip2_f <- blackbox(d2x, dims=ip.dims, minscale=10, ...)
         } else {
-          ip1_f <- blackbox(d1, dims=ip.dims, ...)
-          ip2_f <- blackbox(d2, dims=ip.dims, ...)
+          ip1_f <- blackbox(d1x, dims=ip.dims, ...)
+          ip2_f <- blackbox(d2x, dims=ip.dims, ...)
         }
         ip1 <- ip1_f$individuals[[ip.dims]]
         ip2 <- ip2_f$individuals[[ip.dims]]
@@ -474,6 +532,7 @@ ipbridging <- function(d1, d2,
                                         opt.iter.n = hg.opt.iter.n,
                                         opt.sample.n = hg.opt.sample.n,
                                         opt.th.inline = hg.opt.th.inline,
+                                        blend = hg.blend,
                                         blend.th1 = hg.blend.th1, 
                                         blend.th2 = hg.blend.th2)
       ip2_trans <- bridge.model$ip2_trans
@@ -600,17 +659,17 @@ ipbridging <- function(d1, d2,
         
       } else if (ip.method=="oc") {
         
-        ip_pooled_f <- oc(rollcall(rbind(d1,d2)), dims=ip.dims, polarity=ip.polarity.d1, ...)
+        ip_pooled_f <- oc(rollcall(dx), dims=ip.dims, polarity=ip.polarity.d1, ...)
         ip_pooled <- ip_pooled_f$legislators[,grepl("coord", colnames(ip_pooled_f$legislators))]
         
       } else if (ip.method=="wnominate") {
         
-        ip_pooled_f <- wnominate(rollcall(rbind(d1,d2)), dims=ip.dims, polarity=ip.polarity.d1, ...)
+        ip_pooled_f <- wnominate(rollcall(dx), dims=ip.dims, polarity=ip.polarity.d1, ...)
         ip_pooled <- ip_pooled_f$legislators[,grepl("coord", colnames(ip_pooled_f$legislators))]
         
       } else if (ip.method=="irtMCMC") {
         
-        ip_pooled_f <- ideal(rollcall(rbind(d1,d2)), d=ip.dims, ...)
+        ip_pooled_f <- ideal(rollcall(dx), d=ip.dims, ...)
         ip_pooled <- ip_pooled_f$xbar
         
       } else if (ip.method=="blackbox") {
@@ -622,12 +681,14 @@ ipbridging <- function(d1, d2,
           if ("minscale"%in%names(list(...))) set.minscale <- FALSE
         }  
         
+        dx <- as.data.frame(apply(dx, 2, as.numeric))
+
         # Blackbox Scaling
         if (set.minscale) {
           # Set minscale to 10 if not manually set
-          ip_pooled_f <- blackbox(rbind(d1,d2), dims=ip.dims, minscale=10, ...)
+          ip_pooled_f <- blackbox(dx, dims=ip.dims, minscale=10, ...)
         } else {
-          ip_pooled_f <- blackbox(rbind(d1,d2), dims=ip.dims, ...)
+          ip_pooled_f <- blackbox(dx, dims=ip.dims, ...)
         }
         ip_pooled <- ip_pooled_f$individuals[[ip.dims]]
         
