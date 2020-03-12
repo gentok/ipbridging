@@ -1,4 +1,4 @@
-#' Bridging Two Ideal Point Estimates with Homography Transformation Method
+#' Bridging Two Ideal Point Estimates with Procrustes Transformation Method
 #' 
 #' @param ip1 Matrix or data.frame of 'reference' ideal points 
 #' (i.e., \code{ip2} ideal points will be transformed and mapped to \code{ip1} space).
@@ -37,7 +37,7 @@
 #' 
 #' @export
 
-bridge.homography <- function(ip1,
+bridge.procrustes <- function(ip1,
                               ip2,
                               anchorrows.ip1,
                               anchorrows.ip2, 
@@ -67,9 +67,6 @@ bridge.homography <- function(ip1,
   if (is.data.frame(ip1)) ip1 <- as.matrix(ip1)
   if (is.data.frame(ip2)) ip2 <- as.matrix(ip2)
   
-  ## For now, the method is only applicable to 2-D ideal point coordinates
-  if (ncol(ip1)!=2) stop("The method is currently only applicable to 2-D coordinates!")
-  
   ## Exclude Missing Cases from the Analysis, if there are any
   comprows.ip1 <- which(complete.cases(ip1))
   comprows.ip2 <- which(complete.cases(ip2))
@@ -95,14 +92,14 @@ bridge.homography <- function(ip1,
       anchorrows.ip1 <- anchorrows.ip1[-acmisloc]
       anchorrows.ip2 <- anchorrows.ip2[-acmisloc]
     }
-
+    
   } else {
     
     ip1o <- NULL
     ip2o <- NULL
-
+    
   }
-
+  
   ## Generating Anchors 
   ac1 <- ip1[which(ip1.rowid %in% anchorrows.ip1),,drop=FALSE]
   ac2 <- ip2[which(ip2.rowid %in% anchorrows.ip2),,drop=FALSE]
@@ -112,158 +109,85 @@ bridge.homography <- function(ip1,
   ##########################################
   
   ## For 2-D Coordinates
-  if (ncol(ip1)==2) {
-  
-    if (opt==TRUE) {
+  if (opt==TRUE) {
+    
+    ## Initial Values in Optimization
+    num_in <- 0
+    f_pool <- 0
+    f_inl <- 0
+    ite <- 1
+    
+    while (ite <= opt.iter.n) {
       
-      ## Initial Values in Optimization
-      num_in <- 0
-      f_pool <- 0
-      f_inl <- 0
-      ite <- 1
+      ## Sampled Anchors for the simulation
+      pool <- sample.int(nrow(ac2), size=opt.sample.n, replace=FALSE)
+      ac1_r <- ac1[pool,]
+      ac2_r <- ac2[pool,]
+    
+      #####################################
+      ## Transforming sampled respondents #
+      #####################################
+      p <- MCMCpack::procrustes(ac2_r, ac1_r, translation=TRUE)
+
+      ##############################################################
+      ## Transforming the rest of (supposed) matching respondents ##
+      ##############################################################
+      ac2_trans <- p$s*(ac2%*%p$R) + (matrix(rep(1,nrow(ac2)), ncol=1) %*% t(p$tt))
+
+      ## Find the number of inline respondents (under specified threshold)
+      diff <- ac2_trans - ac1
+      d2 <- diff^2
+      euc2 <- apply(d2, 1, sum)
+      eucd <- sqrt(euc2)
+      t_num_in <- length(which(eucd <= opt.th.inline))
+      inline <- which(eucd <= opt.th.inline)
       
-      while (ite <= opt.iter.n) {
-        
-        ## Sampled Anchors for the simulation
-        pool <- sample.int(nrow(ac2), size=opt.sample.n, replace=FALSE)
-        ac1_r <- ac1[pool,]
-        ac2_r <- ac2[pool,]
-        
-        #####################################
-        ## Transforming sampled respondents #
-        #####################################
-        A <- do.call("rbind", 
-                     lapply(1:nrow(ac2_r), 
-                            function(i) matrix(c(ac2_r[i,],1,0,0,0,
-                                                 -ac2_r[i,1]*ac1_r[i,1],
-                                                 -ac2_r[i,2]*ac1_r[i,1],
-                                                 0,0,0,ac2_r[i,],1,
-                                                 -ac2_r[i,1]*ac1_r[i,2],
-                                                 -ac2_r[i,2]*ac1_r[i,2]), 
-                                               ncol=8, byrow = TRUE)
-                     ))
-        b <- unlist(lapply(1:nrow(ac2_r), function(i) ac1_r[i,]))
-        h <- solve(t(A)%*%A)%*%t(A)%*%b
-        #h <- matrix(c(h,1), nrow=3, byrow=TRUE)
-        #h <- solve(h)
-        #h <- matrix(t(h), ncol=1, byrow=FALSE)[1:8,]
-        
-        ##############################################################
-        ## Transforming the rest of (supposed) matching respondents ##
-        ##############################################################
-        ac2_trans <- 
-          do.call("rbind",
-                  lapply(1:nrow(ac2),
-                         function(i) 
-                           matrix(c((h[1]*ac2[i,1] + h[2]*ac2[i,2] + h[3])/
-                                      (h[7]*ac2[i,1] + h[8]*ac2[i,2] + 1), 
-                                    (h[4]*ac2[i,1] + h[5]*ac2[i,2] + h[6])/
-                                      (h[7]*ac2[i,1] + h[8]*ac2[i,2] + 1)),
-                                  nrow=1)
-                  ))
-        
-        ## Find the number of inline respondents (under specified threshold)
-        diff <- ac2_trans - ac1
-        d2 <- diff^2
-        euc2 <- apply(d2, 1, sum)
-        eucd <- sqrt(euc2)
-        t_num_in <- length(which(eucd <= opt.th.inline))
-        inline <- which(eucd <= opt.th.inline)
-        
-        ## Update Output if more inline respondents found than previous iterations
-        if(t_num_in > num_in){
-          num_in <- t_num_in
-          f_pool <- pool
-          f_inl <- inline
-        }
-        
-        ## Iteration Count
-        ite <- ite + 1
-        
+      ## Update Output if more inline respondents found than previous iterations
+      if(t_num_in > num_in){
+        num_in <- t_num_in
+        f_pool <- pool
+        f_inl <- inline
       }
       
-      #######################################
-      ## Re-estimating h with all inliners ##
-      #######################################
-      r_A <- do.call("rbind", 
-                     lapply(1:num_in, 
-                            function(i) matrix(c(ac2[f_inl[i],],1,0,0,0,
-                                                 -ac2[f_inl[i],1]*ac1[f_inl[i],1],
-                                                 -ac2[f_inl[i],2]*ac1[f_inl[i],1],
-                                                 0,0,0,ac2[f_inl[i],],1,
-                                                 -ac2[f_inl[i],1]*ac1[f_inl[i],2],
-                                                 -ac2[f_inl[i],2]*ac1[f_inl[i],2]), 
-                                               ncol=8, byrow=TRUE)
-                     ))
-      r_b <- unlist(lapply(1:num_in, function(i) ac1[f_inl[i],]))
-      r_h <- solve(t(r_A)%*%r_A)%*%t(r_A)%*%r_b
-      #r_h <- matrix(c(r_h,1), nrow=3, byrow=TRUE)
-      #r_h <- solve(r_h)
-      #r_h <- matrix(t(r_h), ncol=1, byrow=FALSE)[1:8,]
-      
-      #########################################
-      ## Transforming the "real" respondents ##
-      #########################################
-      ip2_trans <- 
-        do.call("rbind",
-                lapply(1:nrow(ip2),
-                       function(i) 
-                         matrix(c((r_h[1]*ip2[i,1] + r_h[2]*ip2[i,2] + r_h[3])/
-                                    (r_h[7]*ip2[i,1] + r_h[8]*ip2[i,2] +1), 
-                                  (r_h[4]*ip2[i,1] + r_h[5]*ip2[i,2] + r_h[6])/
-                                    (r_h[7]*ip2[i,1] + r_h[8]*ip2[i,2] + 1)),
-                                nrow=1)
-                ))
-      
-    } else if (opt==FALSE) {
-      
-      ###################################
-      ## Estimating h with all anchors ##
-      ###################################
-      r_A <- do.call("rbind", 
-                     lapply(1:num_in, 
-                            function(i) matrix(c(ac2[i,],1,0,0,0,
-                                                 -ac2[i,1]*ac1[i,1],
-                                                 -ac2[i,2]*ac1[i,1],
-                                                 0,0,0,ac2[i,],1,
-                                                 -ac2[i,1]*ac1[i,2],
-                                                 -ac2[i,2]*ac1[i,2]), 
-                                               ncol=8, byrow=TRUE)
-                     ))
-      r_b <- unlist(lapply(1:num_in, function(i) ac1[f_inl[i],]))
-      r_h <- solve(t(r_A)%*%r_A)%*%t(r_A)%*%r_b
-      #r_h <- matrix(c(r_h,1), nrow=3, byrow=TRUE)
-      #r_h <- solve(r_h)
-      #r_h <- matrix(t(r_h), ncol=1, byrow=FALSE)[1:8,]
-      
-      #########################################
-      ## Transforming the "real" respondents ##
-      #########################################
-      ip2_trans <- 
-        do.call("rbind",
-                lapply(1:nrow(ip2),
-                       function(i) 
-                         matrix(c((r_h[1]*ip2[i,1] + r_h[2]*ip2[i,2] + r_h[3])/
-                                    (r_h[7]*ip2[i,1] + r_h[8]*ip2[i,2] +1), 
-                                  (r_h[4]*ip2[i,1] + r_h[5]*ip2[i,2] + r_h[6])/
-                                    (r_h[7]*ip2[i,1] + r_h[8]*ip2[i,2] + 1)),
-                                nrow=1)
-                ))
-      
-    } else {
-      
-      stop("invalid 'blend' value!")
+      ## Iteration Count
+      ite <- ite + 1
       
     }
+    
+    #######################################
+    ## Re-estimating p with all inliners ##
+    #######################################
+    r_p <- MCMCpack::procrustes(ac2[f_inl,], ac1[f_inl,], translation=TRUE)
 
+    #########################################
+    ## Transforming the "real" respondents ##
+    #########################################
+    ip2_trans <- r_p$s*(ip2%*%r_p$R) + (matrix(rep(1,nrow(ip2)), ncol=1) %*% t(r_p$tt))
+    
+  } else if (opt==FALSE) {
+    
+    ###############################
+    ## Estimating Transformation ##
+    ###############################
+    r_p <- MCMCpack::procrustes(ac2, ac1, translation=TRUE)
+    
+    #############################
+    ## Transforming All Points ##
+    #############################
+    ip2_trans <- p$s*(ip2%*%r_p$R) + (matrix(rep(1,nrow(ip2)), ncol=1) %*% t(r_p$tt))
+    
+  } else {
+    
+    stop("invalid 'opt' value!")
+    
   }
-
-
+  
+  
   ## Create transformed coordinates ##
   if (blend==FALSE) {
     
     ip2_trans_f <- ip2_trans
-
+    
   } else if (blend==TRUE) {
     
     ##############
@@ -302,11 +226,11 @@ bridge.homography <- function(ip1,
       ip1[which(ip1.rowid %in% anchorrows.ip1),]
     
   } else {
+    
     stop("invalid 'blend' value!")
+    
   }
   
-  
-
   ################################
   ## Putting NA Values Back In! ##
   ################################

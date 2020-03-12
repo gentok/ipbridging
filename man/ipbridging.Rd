@@ -4,16 +4,32 @@
 \alias{ipbridging}
 \title{Bridging Ideal Point Estimates from Two Data Sets}
 \usage{
-ipbridging(d1, d2, bridge.method = "homography",
-  anchors.method = "subsample", anchors.subsample.method = "random",
-  anchors.subsample.pr = 0.1, anchors.subsample.wgt.d1 = NULL,
-  anchors.subsample.wgt.d2 = NULL, anchors.selectrows.d1 = 1:100,
-  anchors.selectrows.d2 = 1:100, anchors.newdata = NULL,
-  input.type = "responses", ip.method = "ooc", ip.dims = 2,
-  ip.polarity.d1 = c(1, 1), ip.polarity.d2 = c(1, 1),
-  hg.opt.iter.n = 10000, hg.opt.sample.n = 30,
-  hg.opt.th.inline = 0.5, hg.blend = TRUE, hg.blend.th1 = 0.05,
-  hg.blend.th2 = 0.15, ...)
+ipbridging(
+  d1,
+  d2,
+  bridge.method = "procrustes",
+  anchors.method = "subsample",
+  anchors.subsample.method = "random",
+  anchors.subsample.pr = 0.1,
+  anchors.subsample.wgt.d1 = NULL,
+  anchors.subsample.wgt.d2 = NULL,
+  anchors.selectrows.d1 = 1:100,
+  anchors.selectrows.d2 = 1:100,
+  anchors.newdata = NULL,
+  input.type = "responses",
+  ip.method = "ooc",
+  ip.dims = 2,
+  ip.polarity.d1 = c(1, 1),
+  ip.polarity.d2 = c(1, 1),
+  tr.opt = FALSE,
+  tr.opt.iter.n = 10000,
+  tr.opt.sample.n = 30,
+  tr.opt.th.inline = 0.5,
+  tr.blend = TRUE,
+  tr.blend.th1 = 0.05,
+  tr.blend.th2 = 0.15,
+  ...
+)
 }
 \arguments{
 \item{d1}{Matrix or data.frame of 'reference' responses.
@@ -28,7 +44,10 @@ columns are ideal point dimensions).}
 
 \item{bridge.method}{Method of bridging. Currently, following methods are aviailable:
 \itemize{
-  \item \code{"homography"} (default): Homography transformation method. 
+  \item \code{"procrustes"} (default): Procrustes transformation method. 
+  Based on anchor cases, this method provides restricted non-parametric procedure to 
+  find optimal transformation matrix to bridge ideal point estimates (calls \code{\link{bridge.homography}}).
+  \item \code{"homography"}: Homography transformation method. 
   Based on anchor cases, this method provides non-parametric procedure to 
   find optimal transformation matrix to bridge ideal point estimates (calls \code{\link{bridge.homography}}).
   \item \code{"joint"}: Joint scaling method. Simple method to combine \code{d1} and 
@@ -137,28 +156,32 @@ Used when \code{ip.method} is \code{"ooc"}, \code{"oc"}, or \code{"wnominate"}.}
 constrained to have a positive (i.e., right-wing or conservative) score on each dimension. 
 Used when \code{ip.method} is \code{"ooc"}, \code{"oc"}, or \code{"wnominate"}.}
 
-\item{hg.opt.iter.n}{Used if \code{bridge.method=="homography"}. 
+\item{tr.opt}{Used if \code{bridge.method} is a transformation method (i.e., \code{"procrustes"}, \code{"homography"}, or \code{"olsmap"}). 
+If \code{TRUE}, conduct optimization of transformation through RANSAC
+(random sample consensus). The default is \code{FALSE}.}
+
+\item{tr.opt.iter.n}{Used if \code{bridge.method} is a transformation method (i.e., \code{"procrustes"}, \code{"homography"}, or \code{"olsmap"}). 
 Number of iteration in the optimization of transformation matrix.}
 
-\item{hg.opt.sample.n}{Used if \code{bridge.method=="homography"}. 
+\item{tr.opt.sample.n}{Used if \code{bridge.method} is a transformation method (i.e., \code{"procrustes"}, \code{"homography"}, or \code{"olsmap"}). 
 Size of anchoring respondents to be sub-sampled at each iteration of 
 optimization.}
 
-\item{hg.opt.th.inline}{Used if \code{bridge.method=="homography"}. 
+\item{tr.opt.th.inline}{Used if \code{bridge.method} is a transformation method (i.e., \code{"procrustes"}, \code{"homography"}, or \code{"olsmap"}). 
 Upper bound to determine inline respondents at each iteration of 
 optimization. A respondent is considered 'inline' if the distance between transformed
 \code{ip2} and \code{ip1} goes below this threshold.}
 
-\item{hg.blend}{Used if \code{bridge.method=="homography"}. 
+\item{tr.blend}{Used if \code{bridge.method} is a transformation method (i.e., \code{"procrustes"}, \code{"homography"}, or \code{"olsmap"}). 
 If \code{FALSE}, do not use blending procedure in homograhy transformation. 
 The default is \code{TRUE}.}
 
-\item{hg.blend.th1}{Used if \code{bridge.method=="homography"}. 
+\item{tr.blend.th1}{Used if \code{bridge.method} is a transformation method (i.e., \code{"procrustes"}, \code{"homography"}, or \code{"olsmap"}). 
 First threshold used in 'blending' procedure. If minimum difference 
 between transformed \code{ip2} and \code{ip1} goes below this threshold, the 
 transformed \code{ip2} is replaced with the closest \code{ip1}.}
 
-\item{hg.blend.th2}{Used if \code{bridge.method=="homography"}. Second threshold used in 'blending' procedure. If minimum difference 
+\item{tr.blend.th2}{Used if \code{bridge.method} is a transformation method (i.e., \code{"procrustes"}, \code{"homography"}, or \code{"olsmap"}). Second threshold used in 'blending' procedure. If minimum difference 
 between transformed \code{ip2} and \code{ip1} goes below this threshold (but above 
 \code{blend.th1}), the transformed \code{ip2} is replaced with the value that 
 intrapolates \code{ip1} that falls within this threshold.}
@@ -175,7 +198,7 @@ A list with the following elements along with specified argument values
 }
 }
 \description{
-Toolbox function that Bridges ideal point estimates computed from 
+Toolbox function that bridges ideal point estimates computed from 
 two separate datasets.
 }
 \references{
@@ -186,7 +209,10 @@ two separate datasets.
 }
 }
 \seealso{
-\code{\link{bridge.homography}}, \code{\link{oocflex}}, \code{\link[oc]{oc}}, 
+\code{\link{ipest}}, \code{\link{setanchors}}, 
+\code{\link{bridge.procrustes}}, \code{\link{bridge.homography}}, 
+\code{\link{bridge.olsmap}},
+\code{\link{oocflex}}, \code{\link[oc]{oc}}, \code{\link[basicspace]{blackbox}},
 \code{\link[wnominate]{wnominate}}, \code{\link[pscl]{ideal}}
 }
 \author{

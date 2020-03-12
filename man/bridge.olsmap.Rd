@@ -4,7 +4,19 @@
 \alias{bridge.olsmap}
 \title{Bridging Two Ideal Point Estimates with OLS Mapping}
 \usage{
-bridge.olsmap(ip1, ip2, anchorrows.ip1, anchorrows.ip2)
+bridge.olsmap(
+  ip1,
+  ip2,
+  anchorrows.ip1,
+  anchorrows.ip2,
+  opt = FALSE,
+  opt.iter.n = 10000,
+  opt.sample.n = 30,
+  opt.th.inline = 0.5,
+  blend = TRUE,
+  blend.th1 = 0.05,
+  blend.th2 = 0.15
+)
 }
 \arguments{
 \item{ip1}{Matrix or data.frame of 'reference' ideal points 
@@ -18,6 +30,30 @@ The current code only allows 2 dimensions.}
 
 \item{anchorrows.ip2}{Vector of row number of anchoring respondents in \code{ip2}.
 Must be the same length as \code{anchorrows.ip1}.}
+
+\item{opt}{If \code{TRUE}, conduct optimization of transformation through RANSAC
+(random sample consensus). The default is \code{FALSE}.}
+
+\item{opt.iter.n}{Number of iteration in the optimization of transformation 
+matrix.}
+
+\item{opt.sample.n}{Size of anchoring respondents to be sub-sampled at each iteration of 
+optimization.}
+
+\item{opt.th.inline}{Upper bound to determine inline respondents at each iteration of 
+optimization. A respondent is considered 'inline' if the distance between transformed
+\code{ip2} and \code{ip1} goes below this threshold.}
+
+\item{blend}{If \code{FALSE}, do not use blending procedure. The default is \code{TRUE}.}
+
+\item{blend.th1}{If \code{blend==TRUE}, first threshold used in 'blending' procedure. If minimum difference 
+between transformed \code{ip2} and \code{ip1} goes below this threshold, the 
+transformed \code{ip2} is replaced with the closest \code{ip1}.}
+
+\item{blend.th2}{If \code{blend==TRUE}, second threshold used in 'blending' procedure. If minimum difference 
+between transformed \code{ip2} and \code{ip1} goes below this threshold (but above 
+\code{blend.th1}), the transformed \code{ip2} is replaced with the value that 
+intrapolates \code{ip1} that falls within this threshold.}
 }
 \value{
 A list with the following elements along with specified argument values:
@@ -29,9 +65,6 @@ A list with the following elements along with specified argument values:
 }
 \description{
 Bridging Two Ideal Point Estimates with OLS Mapping
-}
-\references{
-Shor, B.; Berry, C. & McCarty, N. (2010), 'A Bridge to Somewhere: Mapping State and Congressional Ideology on a Cross-institutional Common Space', Legislative Studies Quarterly 35(3), 417--448.
 }
 \author{
 Tzu-Ping Liu \email{jamesliu0222@gmail.com}, Gento Kato \email{gento.badger@gmail.com}, and Sam Fuller \email{sjfuller@ucdavis.edu}.

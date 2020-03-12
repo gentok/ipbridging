@@ -1,6 +1,6 @@
 #' Bridging Ideal Point Estimates from Two Data Sets
 #' 
-#' @description Toolbox function that Bridges ideal point estimates computed from 
+#' @description Toolbox function that bridges ideal point estimates computed from 
 #' two separate datasets. 
 #' 
 #' @param d1 Matrix or data.frame of 'reference' responses.
@@ -13,7 +13,10 @@
 #' @param d2 Matrix or data.frame of responses (or ideal points) to be transformed.
 #' @param bridge.method Method of bridging. Currently, following methods are aviailable:
 #' \itemize{
-#'   \item \code{"homography"} (default): Homography transformation method. 
+#'   \item \code{"procrustes"} (default): Procrustes transformation method. 
+#'   Based on anchor cases, this method provides restricted non-parametric procedure to 
+#'   find optimal transformation matrix to bridge ideal point estimates (calls \code{\link{bridge.homography}}).
+#'   \item \code{"homography"}: Homography transformation method. 
 #'   Based on anchor cases, this method provides non-parametric procedure to 
 #'   find optimal transformation matrix to bridge ideal point estimates (calls \code{\link{bridge.homography}}).
 #'   \item \code{"joint"}: Joint scaling method. Simple method to combine \code{d1} and 
@@ -108,23 +111,26 @@
 #' @param ip.polarity.d2 A vector specifying the row number of the \code{d2}'s respondent(s) 
 #' constrained to have a positive (i.e., right-wing or conservative) score on each dimension. 
 #' Used when \code{ip.method} is \code{"ooc"}, \code{"oc"}, or \code{"wnominate"}. 
-#' @param hg.opt.iter.n Used if \code{bridge.method=="homography"}. 
+#' @param tr.opt Used if \code{bridge.method} is a transformation method (i.e., \code{"procrustes"}, \code{"homography"}, or \code{"olsmap"}). 
+#' If \code{TRUE}, conduct optimization of transformation through RANSAC
+#' (random sample consensus). The default is \code{FALSE}.
+#' @param tr.opt.iter.n Used if \code{bridge.method} is a transformation method (i.e., \code{"procrustes"}, \code{"homography"}, or \code{"olsmap"}). 
 #' Number of iteration in the optimization of transformation matrix.
-#' @param hg.opt.sample.n Used if \code{bridge.method=="homography"}. 
+#' @param tr.opt.sample.n Used if \code{bridge.method} is a transformation method (i.e., \code{"procrustes"}, \code{"homography"}, or \code{"olsmap"}). 
 #' Size of anchoring respondents to be sub-sampled at each iteration of 
 #' optimization.
-#' @param hg.opt.th.inline Used if \code{bridge.method=="homography"}. 
+#' @param tr.opt.th.inline Used if \code{bridge.method} is a transformation method (i.e., \code{"procrustes"}, \code{"homography"}, or \code{"olsmap"}). 
 #' Upper bound to determine inline respondents at each iteration of 
 #' optimization. A respondent is considered 'inline' if the distance between transformed
 #' \code{ip2} and \code{ip1} goes below this threshold.
-#' @param hg.blend Used if \code{bridge.method=="homography"}. 
+#' @param tr.blend Used if \code{bridge.method} is a transformation method (i.e., \code{"procrustes"}, \code{"homography"}, or \code{"olsmap"}). 
 #' If \code{FALSE}, do not use blending procedure in homograhy transformation. 
 #' The default is \code{TRUE}.
-#' @param hg.blend.th1 Used if \code{bridge.method=="homography"}. 
+#' @param tr.blend.th1 Used if \code{bridge.method} is a transformation method (i.e., \code{"procrustes"}, \code{"homography"}, or \code{"olsmap"}). 
 #' First threshold used in 'blending' procedure. If minimum difference 
 #' between transformed \code{ip2} and \code{ip1} goes below this threshold, the 
 #' transformed \code{ip2} is replaced with the closest \code{ip1}. 
-#' @param hg.blend.th2 Used if \code{bridge.method=="homography"}. Second threshold used in 'blending' procedure. If minimum difference 
+#' @param tr.blend.th2 Used if \code{bridge.method} is a transformation method (i.e., \code{"procrustes"}, \code{"homography"}, or \code{"olsmap"}). Second threshold used in 'blending' procedure. If minimum difference 
 #' between transformed \code{ip2} and \code{ip1} goes below this threshold (but above 
 #' \code{blend.th1}), the transformed \code{ip2} is replaced with the value that 
 #' intrapolates \code{ip1} that falls within this threshold. 
@@ -140,7 +146,10 @@
 #' 
 #' @author Tzu-Ping Liu \email{jamesliu0222@@gmail.com}, Gento Kato \email{gento.badger@@gmail.com}, and Sam Fuller \email{sjfuller@@ucdavis.edu}.
 #' 
-#' @seealso \code{\link{bridge.homography}}, \code{\link{oocflex}}, \code{\link[oc]{oc}}, 
+#' @seealso \code{\link{ipest}}, \code{\link{setanchors}}, 
+#' \code{\link{bridge.procrustes}}, \code{\link{bridge.homography}}, 
+#' \code{\link{bridge.olsmap}},
+#' \code{\link{oocflex}}, \code{\link[oc]{oc}}, \code{\link[basicspace]{blackbox}},
 #' \code{\link[wnominate]{wnominate}}, \code{\link[pscl]{ideal}}
 #' 
 #' @references 
@@ -156,11 +165,12 @@
 #' @import wnominate
 #' @import pscl
 #' @import basicspace
+#' @import emIRT
 #' 
 #' @export
 
 ipbridging <- function(d1, d2, 
-                       bridge.method = "homography", 
+                       bridge.method = "procrustes", 
                        anchors.method = "subsample",
                        anchors.subsample.method = "random",
                        anchors.subsample.pr = 0.1,
@@ -174,12 +184,13 @@ ipbridging <- function(d1, d2,
                        ip.dims=2,
                        ip.polarity.d1 = c(1,1),
                        ip.polarity.d2 = c(1,1),
-                       hg.opt.iter.n = 10000,
-                       hg.opt.sample.n = 30,
-                       hg.opt.th.inline = 0.5,
-                       hg.blend = TRUE,
-                       hg.blend.th1 = 0.05, 
-                       hg.blend.th2 = 0.15,
+                       tr.opt = FALSE,
+                       tr.opt.iter.n = 10000,
+                       tr.opt.sample.n = 30,
+                       tr.opt.th.inline = 0.5,
+                       tr.blend = TRUE,
+                       tr.blend.th1 = 0.05, 
+                       tr.blend.th2 = 0.15,
                        ...) {
   
   ## Check Inputs
@@ -219,55 +230,13 @@ ipbridging <- function(d1, d2,
       
       # Anchor Identifier (NA in joint)
       respdt$isanchor <- NA
-
+      
       # Estimate Ideal Points
-      if (ip.method=="ooc") {
-        
-        ip_joint_f <- oocflex(rbind(d1,d2), dims=ip.dims, polarity=ip.polarity.d1, ...)
-        ip_joint <- ip_joint_f$respondents[,grepl("coord", colnames(ip_joint_f$respondents))]
-        
-      } else if (ip.method=="oc") {
-        
-        ip_joint_f <- oc(rollcall(rbind(d1,d2)), dims=ip.dims, polarity=ip.polarity.d1, ...)
-        ip_joint <- ip_joint_f$legislators[,grepl("coord", colnames(ip_joint_f$legislators))]
-
-      } else if (ip.method=="wnominate") {
-        
-        ip_joint_f <- wnominate(rollcall(rbind(d1,d2)), dims=ip.dims, polarity=ip.polarity.d1, ...)
-        ip_joint <- ip_joint_f$legislators[,grepl("coord", colnames(ip_joint_f$legislators))]
-        
-      } else if (ip.method=="irtMCMC") {
-        
-        ip_joint_f <- ideal(rollcall(rbind(d1,d2)), d=ip.dims, ...)
-        ip_joint <- ip_joint_f$xbar
-        
-      } else if (ip.method=="blackbox") {
-        
-        # Check if minscale argument is manually set
-        # *minscale has no default in blackbox function
-        set.minscale <- TRUE
-        if (length(list(...))>0) {
-          if ("minscale"%in%names(list(...))) set.minscale <- FALSE
-        }  
-        
-        d1 <- as.data.frame(apply(d1, 2, as.numeric))
-        d2 <- as.data.frame(apply(d2, 2, as.numeric))
-
-        # Blackbox Scaling
-        if (set.minscale) {
-          # Set minscale to 10 if not manually set
-          ip_joint_f <- blackbox(rbind(d1,d2), dims=ip.dims, minscale=10, ...)
-        } else {
-          ip_joint_f <- blackbox(rbind(d1,d2), dims=ip.dims, ...)
-        }
-        ip_joint <- ip_joint_f$individuals[[ip.dims]]
-        
-      } else {
-        
-        stop("Invalid 'ip.method' value!")
-        
-      }
-
+      ip_joint_est <- ipest(rbind(d1,d2), method=ip.method, 
+                            dims=ip.dims, polarity=ip.polarity.d1, ...)
+      ip_joint_f <- ip_joint_est$ip_f
+      ip_joint <- ip_joint_est$ip
+      
     } else {
       
       stop("Invalid 'input.type' value!")
@@ -294,7 +263,7 @@ ipbridging <- function(d1, d2,
     return(out)
     
   ## All Other Bridging Methods using Linear Mapping with Anchors    
-  } else if (bridge.method%in%c("homography","olsmap")) {
+  } else if (bridge.method%in%c("procrustes","homography","olsmap")) {
     
     ## Generate Ideal Point Estimates from Two Separate Data Sets
     if (input.type=="idealpoints") {
@@ -332,185 +301,34 @@ ipbridging <- function(d1, d2,
       
     } else if (input.type=="responses") {
       
-      ## Set Anchors
-      cat("Setting anchors...\n\n")
-      if (anchors.method=="newdata") {
-        
-        if (ncol(d1)!=ncol(d2)) stop("d1 and d2 must have the same number of columns!")
-        
-        if (is.null(anchors.newdata)) {
-          
-          stop("anchors.newdata is NULL!")
-          
-        } else if (!class(anchors.newdata)[1]%in%c("matrix","data.frame")) {
-          
-          stop("anchors.newdata must be matrix or data.frame!")
-          
-        } else if (ncol(anchors.newdata)!=ncol(d1)) {
-          
-          stop("anchors.newdata must have same number of column as ")
-          
-        }
-        if (is.data.frame(anchors.newdata)) anchors.newdata <- as.matrix(anchors.newdata) 
-        
-        # Set Anchors data
-        ac <- anchors.newdata
-        
-        # Additional rows in respdt
-        respdt_add <- data.frame(allid = seq(nrow(d1)+nrow(d2)+1,nrow(d1)+nrow(d2)+nrow(ac)),
-                                 subid = seq(1,nrow(ac)),
-                                 data = 3,
-                                 isanchor = 1)
-        respdt <- rbind(respdt, respdt_add)
-        
-        ## Dataset for Ideal Point Computation
-        d1x <- rbind(d1, ac)
-        d2x <- rbind(d2, ac)
-        anchorrows.ip1 <- seq(nrow(d1)+1,nrow(d1x))
-        anchorrows.ip2 <- seq(nrow(d2)+1,nrow(d2x))
-        
-      } else if (anchors.method=="selectrows") { 
-        
-        if (length(anchors.selectrows.d1)!=length(anchors.selectrows.d2)) {
-          stop("anchors.selectrows.d1 and anchors.selectrows.d2 must have the same length!")
-        }
-        
-        # Update respdt
-        respdt$isanchor[anchors.selectrows.d1] <- 1
-        respdt$isanchor[anchors.selectrows.d2+nrow(d1)] <- 1
-        
-        ## Dataset for Ideal Point Computation
-        d1x <- d1
-        d2x <- d2
-        anchorrows.ip1 <- anchors.selectrows.d1
-        anchorrows.ip2 <- anchors.selectrows.d2
-        
-      } else if (anchors.method=="subsample") {
-        
-        ## Sample subset of rows and use it as anchor
-        if (anchors.subsample.method=="random") {
-          
-          ## Random Sample of Rows
-          anchors.sample.size <-  floor(min(nrow(d1),nrow(d2))*anchors.subsample.pr)
-          anchors.samplerows.d1 <- sample.int(nrow(d1), 
-                                              size = anchors.sample.size,
-                                              prob = anchors.subsample.wgt.d1)
-          anchors.samplerows.d2 <- sample.int(nrow(d2), 
-                                              size = anchors.sample.size,
-                                              prob = anchors.subsample.wgt.d2)
-          
-        } else if (anchors.subsample.method=="random.d1") {
-          
-          ## Random Sample of Rows
-          anchors.sample.size <-  floor(nrow(d1)*anchors.subsample.pr)
-          anchors.samplerows.d1 <- sample.int(nrow(d1), 
-                                              size = anchors.sample.size,
-                                              prob = anchors.subsample.wgt.d1)
-          anchors.samplerows.d2 <- integer() 
-          
-        } else if (anchors.subsample.method=="random.d2") {
-          
-          ## Random Sample of Rows
-          anchors.sample.size <-  floor(nrow(d2)*anchors.subsample.pr)
-          anchors.samplerows.d1 <- integer() 
-          anchors.samplerows.d2 <- sample.int(nrow(d2), 
-                                              size = anchors.sample.size,
-                                              prob = anchors.subsample.wgt.d2)
-          
-        } else if (anchors.subsample.method=="selectrows") { 
-          
-          ## Subsample by manually selecting rows
-          anchors.samplerows.d1 <- anchors.selectrows.d1
-          anchors.samplerows.d2 <- anchors.selectrows.d2
-
-        } else {
-          
-          stop("Invalid 'anchors.subsample.method' value!")
-          
-        }
-        
-        ## Update Dataset for Ideal Point Computation
-        d1x <- rbind(d1, d2[anchors.samplerows.d2,])
-        d2x <- rbind(d2, d1[anchors.samplerows.d1,])
-        if (nrow(d1x)>nrow(d1)) {
-          anchorrows.ip1 <- c(anchors.samplerows.d1, seq(nrow(d1)+1,nrow(d1x)))
-        } else {
-          anchorrows.ip1 <- anchors.samplerows.d1
-        }
-        if (nrow(d2x)>nrow(d2)) {
-          anchorrows.ip2 <- c(anchors.samplerows.d2, seq(nrow(d2)+1,nrow(d2x)))
-        } else {
-          anchorrows.ip2 <- anchors.samplerows.d2
-        }
-        
-      } else {
-        
-        stop("Invalid 'anchors.method' value!")
-        
-      }
+      outac <- setanchors(d1, d2,
+                          anchors.method,# = "subsample",
+                          anchors.subsample.method,# = "random",
+                          anchors.subsample.pr,# = 0.1,
+                          anchors.subsample.wgt.d1,# = NULL,
+                          anchors.subsample.wgt.d2,# = NULL,
+                          anchors.selectrows.d1,# = 1:100,
+                          anchors.selectrows.d2,# = 1:100,
+                          anchors.newdata)# = NULL)
+      d1x <- outac$d1x
+      d2x <- outac$d2x
+      respdt <- outac$respdt
+      anchorrows.ip1 <- outac$anchorrows.ip1
+      anchorrows.ip2 <- outac$anchorrows.ip2
       
       ## Compute Ideal Points
       cat("Generating ideal points on subsets...\n")
-      if (ip.method=="ooc") {
-        
-        ip1_f <- oocflex(d1x, dims=ip.dims, polarity=ip.polarity.d1, ...)
-        ip2_f <- oocflex(d2x, dims=ip.dims, polarity=ip.polarity.d2, ...)
-        ip1 <- ip1_f$respondents[,grepl("coord", colnames(ip1_f$respondents))]
-        ip2 <- ip2_f$respondents[,grepl("coord", colnames(ip2_f$respondents))]
-        
-      } else if (ip.method=="oc") {
-        
-        ip1_f <- oc(rollcall(d1x), dims=ip.dims, polarity=ip.polarity.d1, ...)
-        ip2_f <- oc(rollcall(d2x), dims=ip.dims, polarity=ip.polarity.d2, ...)
-        ip1 <- ip1_f$legislators[,grepl("coord", colnames(ip1_f$legislators))]
-        ip2 <- ip2_f$legislators[,grepl("coord", colnames(ip2_f$legislators))]
-        
-      } else if (ip.method=="wnominate") {
-        
-        ip1_f <- wnominate(rollcall(d1x), dims=ip.dims, polarity=ip.polarity.d1, ...)
-        ip2_f <- wnominate(rollcall(d2x), dims=ip.dims, polarity=ip.polarity.d2, ...)
-        ip1 <- ip1_f$legislators[,grepl("coord", colnames(ip1_f$legislators))]
-        ip2 <- ip2_f$legislators[,grepl("coord", colnames(ip2_f$legislators))]
-        
-      } else if (ip.method=="irtMCMC") {
-        
-        ip1_f <- ideal(rollcall(d1x), d=ip.dims, ...)
-        ip2_f <- ideal(rollcall(d2x), d=ip.dims, ...)
-        ip1 <- ip1_f$xbar
-        ip2 <- ip2_f$xbar
-        
-      } else if (ip.method=="blackbox") {
-        
-        
-        
-        # Check if minscale argument is manually set
-        # *minscale has no default in original blackbox function
-        set.minscale <- TRUE
-        if (length(list(...))>0) {
-          if ("minscale"%in%names(list(...))) set.minscale <- FALSE
-        }  
-        
-        d1x <- as.data.frame(apply(d1x, 2, as.numeric))
-        d2x <- as.data.frame(apply(d2x, 2, as.numeric))
-        
-        # Blackbox Scaling
-        if (set.minscale) {
-          # Set minscale to 10 if not manually set
-          ip1_f <- blackbox(d1x, dims=ip.dims, minscale=10, ...)
-          ip2_f <- blackbox(d2x, dims=ip.dims, minscale=10, ...)
-        } else {
-          ip1_f <- blackbox(d1x, dims=ip.dims, ...)
-          ip2_f <- blackbox(d2x, dims=ip.dims, ...)
-        }
-        ip1 <- ip1_f$individuals[[ip.dims]]
-        ip2 <- ip2_f$individuals[[ip.dims]]
-        
-      } else {
-        
-        stop("Invalid 'ip.method' value!")
-        
-      }
-
+      # Ideal Point 1
+      ip1_est <- ipest(d1x, method=ip.method, 
+                            dims=ip.dims, polarity=ip.polarity.d1, ...)
+      ip1_f <- ip1_est$ip_f
+      ip1 <- ip1_est$ip
+      # Ideal Point 2
+      ip2_est <- ipest(d2x, method=ip.method, 
+                       dims=ip.dims, polarity=ip.polarity.d2, ...)
+      ip2_f <- ip2_est$ip_f
+      ip2 <- ip2_est$ip
+      
     } else {
       
       stop("Invalid 'input.type' value!")
@@ -523,27 +341,51 @@ ipbridging <- function(d1, d2,
     
     ## Homography Transformation Method
     cat("\nMapping d2 ideal points on d1 ideal points space...\n\n")
+    if (bridge.method=="procrustes") {
+      
+      bridge.model <- bridge.procrustes(ip1=ip1,
+                                        ip2=ip2,
+                                        anchorrows.ip1=anchorrows.ip1,
+                                        anchorrows.ip2=anchorrows.ip2, 
+                                        opt = tr.opt,
+                                        opt.iter.n = tr.opt.iter.n,
+                                        opt.sample.n = tr.opt.sample.n,
+                                        opt.th.inline = tr.opt.th.inline,
+                                        blend = tr.blend,
+                                        blend.th1 = tr.blend.th1, 
+                                        blend.th2 = tr.blend.th2)
+      ip2_trans <- bridge.model$ip2_trans
+      
+    }
     if (bridge.method=="homography") {
       
       bridge.model <- bridge.homography(ip1=ip1,
                                         ip2=ip2,
                                         anchorrows.ip1=anchorrows.ip1,
                                         anchorrows.ip2=anchorrows.ip2, 
-                                        opt.iter.n = hg.opt.iter.n,
-                                        opt.sample.n = hg.opt.sample.n,
-                                        opt.th.inline = hg.opt.th.inline,
-                                        blend = hg.blend,
-                                        blend.th1 = hg.blend.th1, 
-                                        blend.th2 = hg.blend.th2)
+                                        opt = tr.opt,
+                                        opt.iter.n = tr.opt.iter.n,
+                                        opt.sample.n = tr.opt.sample.n,
+                                        opt.th.inline = tr.opt.th.inline,
+                                        blend = tr.blend,
+                                        blend.th1 = tr.blend.th1, 
+                                        blend.th2 = tr.blend.th2)
       ip2_trans <- bridge.model$ip2_trans
       
     }
     if (bridge.method=="olsmap") {
       
       bridge.model <- bridge.olsmap(ip1=ip1,
-                                    ip2=ip2,
-                                    anchorrows.ip1=anchorrows.ip1,
-                                    anchorrows.ip2=anchorrows.ip2)
+                                        ip2=ip2,
+                                        anchorrows.ip1=anchorrows.ip1,
+                                        anchorrows.ip2=anchorrows.ip2, 
+                                        opt = tr.opt,
+                                        opt.iter.n = tr.opt.iter.n,
+                                        opt.sample.n = tr.opt.sample.n,
+                                        opt.th.inline = tr.opt.th.inline,
+                                        blend = tr.blend,
+                                        blend.th1 = tr.blend.th1, 
+                                        blend.th2 = tr.blend.th2)
       ip2_trans <- bridge.model$ip2_trans
       
     }
@@ -652,51 +494,10 @@ ipbridging <- function(d1, d2,
       respdt$isanchor <- NA
       
       # Estimate Ideal Points
-      if (ip.method=="ooc") {
-        
-        ip_pooled_f <- oocflex(dx, dims=ip.dims, polarity=ip.polarity.d1, ...)
-        ip_pooled <- ip_pooled_f$respondents[,grepl("coord", colnames(ip_pooled_f$respondents))]
-        
-      } else if (ip.method=="oc") {
-        
-        ip_pooled_f <- oc(rollcall(dx), dims=ip.dims, polarity=ip.polarity.d1, ...)
-        ip_pooled <- ip_pooled_f$legislators[,grepl("coord", colnames(ip_pooled_f$legislators))]
-        
-      } else if (ip.method=="wnominate") {
-        
-        ip_pooled_f <- wnominate(rollcall(dx), dims=ip.dims, polarity=ip.polarity.d1, ...)
-        ip_pooled <- ip_pooled_f$legislators[,grepl("coord", colnames(ip_pooled_f$legislators))]
-        
-      } else if (ip.method=="irtMCMC") {
-        
-        ip_pooled_f <- ideal(rollcall(dx), d=ip.dims, ...)
-        ip_pooled <- ip_pooled_f$xbar
-        
-      } else if (ip.method=="blackbox") {
-        
-        # Check if minscale argument is manually set
-        # *minscale has no default in blackbox function
-        set.minscale <- TRUE
-        if (length(list(...))>0) {
-          if ("minscale"%in%names(list(...))) set.minscale <- FALSE
-        }  
-        
-        dx <- as.data.frame(apply(dx, 2, as.numeric))
-
-        # Blackbox Scaling
-        if (set.minscale) {
-          # Set minscale to 10 if not manually set
-          ip_pooled_f <- blackbox(dx, dims=ip.dims, minscale=10, ...)
-        } else {
-          ip_pooled_f <- blackbox(dx, dims=ip.dims, ...)
-        }
-        ip_pooled <- ip_pooled_f$individuals[[ip.dims]]
-        
-      } else {
-        
-        stop("Invalid 'ip.method' value!")
-        
-      }
+      ip_pooled_est <- ipest(dx, method=ip.method, 
+                            dims=ip.dims, polarity=ip.polarity.d1, ...)
+      ip_pooled_f <- ip_pooled_est$ip_f
+      ip_pooled <- ip_pooled_est$ip
       
     } else {
       

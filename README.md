@@ -13,7 +13,7 @@ The package website is published [HERE](https://gentok.github.io/ipbridging/).
 
 ## Installation
 
-<code>devtools::install_github("gentok/ipbridging")</code>
+### 1. Insall <code>oc</code> package
 
 <b>CAUTION!</b> As of January 2020, one of the dependencies, <code>oc</code> package is archived from CRAN. 
 If you don't already have <code>oc</code> package, you can install the latest version of archived <code>oc</code> package using following codes:
@@ -24,6 +24,20 @@ Alternatively, you could install <code>oc</code> package from github CRAN mirror
 
 <code>devtools::install_github("cran/oc")</code>
 
+### 2. Install <code>ooc</code> package
+
+<b>CAUTION!</b> May need the first line to avoid error in installation due to warnings.
+
+<code>Sys.setenv(R_REMOTES_NO_ERRORS_FROM_WARNINGS=TRUE)</code> <br>
+<code>devtools::install_github("tzuliu/ooc")</code>
+
+### 3. Install <code>ipbridging</code> package
+
+After successfully installing <code>oc</code> and <code>ooc</code> package, you can install the <code>ipbridging</code> package by:
+
+<code>Sys.setenv(R_REMOTES_NO_ERRORS_FROM_WARNINGS=TRUE)</code> <br>
+<code>devtools::install_github("gentok/ipbridging")</code>
+
 <!-- Also, in case you want to use GPU accelerated method to tune SVM parameters in <code>oocflex</code> function, you need to install <code>Rgtsvm</code> package (check the GitHub repository [HERE](https://github.com/Danko-Lab/Rgtsvm)). You need to have PC with NVIDIA GPU and Linux OS to install <code>Rgtsvm</code> package. -->
 
 ## Main Functions
@@ -33,6 +47,7 @@ Alternatively, you could install <code>oc</code> package from github CRAN mirror
 
 ## Updates Log
 
+* 03/12/2020 Version 0.0.08 (beta version 8: Made Significant Changes)
 * 02/03/2020 Version 0.0.06 (beta version 7)
 * 01/29/2020 Version 0.0.05 (beta version 6)
 * 01/29/2020 Version 0.0.04 (beta version 5)

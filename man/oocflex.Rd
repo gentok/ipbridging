@@ -4,9 +4,18 @@
 \alias{oocflex}
 \title{Ordered Optimal Classification (Flexible Version)}
 \usage{
-oocflex(votemat, dims = 2, minvotes = 10, lop = 0.001,
-  polarity = c(1, 1), iter = 25, nv.method = "svm.reg",
-  binary.method = "dominance", random.seed = NULL, ...)
+oocflex(
+  votemat,
+  dims = 2,
+  minvotes = 10,
+  lop = 0.001,
+  polarity = c(1, 1),
+  iter = 25,
+  nv.method = "svm.reg",
+  binary.method = "dominance",
+  random.seed = NULL,
+  ...
+)
 }
 \arguments{
 \item{votemat}{A matrix of ordinal choice data, must be consecutive 

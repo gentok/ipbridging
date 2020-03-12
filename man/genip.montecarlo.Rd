@@ -4,10 +4,18 @@
 \alias{genip.montecarlo}
 \title{Generate Simulated Responses of Respondents with Ideal Points}
 \usage{
-genip.montecarlo(n = 1200, q = 20, ncat = 5, ndim = 2,
-  missing = 0.1, correlations.lim = c(-0.1, 0.7),
-  utility.probs = c(0.33, 0.33, 0.33), error.respondents = c(0.1, 1),
-  error.issues = c(2, 1), idealpoints.lim = c(-2, 2))
+genip.montecarlo(
+  n = 1200,
+  q = 20,
+  ncat = 5,
+  ndim = 2,
+  missing = 0.1,
+  correlations.lim = c(-0.1, 0.7),
+  utility.probs = c(0.33, 0.33, 0.33),
+  error.respondents = c(0.1, 1),
+  error.issues = c(2, 1),
+  idealpoints.lim = c(-2, 2)
+)
 }
 \arguments{
 \item{n}{Number of respondents.}

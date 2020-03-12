@@ -4,9 +4,16 @@
 \alias{nv.svm}
 \title{Estimating Normal Vector through Support Vector Machine}
 \usage{
-nv.svm(xmat, resp, kernel = "radial", tune.param = "heuristics",
-  use.gpu = FALSE, param.heuristics.k = 3,
-  param.heuristics.frac = 0.5, ...)
+nv.svm(
+  xmat,
+  resp,
+  kernel = "radial",
+  tune.param = "heuristics",
+  use.gpu = FALSE,
+  param.heuristics.k = 3,
+  param.heuristics.frac = 0.5,
+  ...
+)
 }
 \arguments{
 \item{xmat}{Matrix of OC coordinates (i.e., predictors).}
