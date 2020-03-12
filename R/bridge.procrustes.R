@@ -174,7 +174,7 @@ bridge.procrustes <- function(ip1,
     #############################
     ## Transforming All Points ##
     #############################
-    ip2_trans <- p$s*(ip2%*%r_p$R) + (matrix(rep(1,nrow(ip2)), ncol=1) %*% t(r_p$tt))
+    ip2_trans <- r_p$s*(ip2%*%r_p$R) + (matrix(rep(1,nrow(ip2)), ncol=1) %*% t(r_p$tt))
     
   } else {
     
