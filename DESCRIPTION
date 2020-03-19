@@ -1,11 +1,11 @@
 Package: ipbridging
 Title: Bridging Ideal Point Estimates
-Version: 0.0.07
+Version: 0.0.08
 Authors@R: c(
     person("Tzu-Ping", "Liu", email = "jamesliu0222@gmail.com", role = "aut"),
     person("Gento", "Kato", email = "gento.badger@gmail.com", role = c("aut","cre")),
     person("Samuel", "Fuller", email = "sjfuller@@ucdavis.edu", role = "aut"))
-Description: This package provides parametric and non-parametric methods to bridge ideal point estimates generated from two (or more) separate data sets. 
+Description: This package provides parametric and non-parametric methods to bridge ideal point estimates generated from two separate data sets. 
 Depends: R (>= 3.6)
 License: MIT + file LICENSE
 Encoding: UTF-8

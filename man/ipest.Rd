@@ -9,7 +9,7 @@ ipest(
   method = "ooc",
   dims = 2,
   polarity = c(1, 1),
-  irt_type = "binary",
+  irt.type = "binary",
   ...
 )
 }
@@ -28,11 +28,11 @@ ipest(
   \item \code{"oc"}: Optimal classification. Calls \code{\link[oc]{oc}} function from \code{oc} package (\code{polarity=c(1,1)} by default). 
   \item \code{"wnominate"}: W-NOMINATE. Calls \code{\link[wnominate]{wnominate}} function from \code{wnominate} package  (\code{polarity=c(1,1)} by default).
   \item \code{"irtMCMC"}: IRT model via Markov chain Monte Carlo method. 
-  Calls \code{\link[pscl]{ideal}} function from \code{pscl} package if \code{irt_type=="binary"};
-  Calls \code{\link[MCMCpack]{MCMCfactanal}} function from \code{MCMCpack} package if \code{irt_type=="ordered"} (still provisional).
+  Calls \code{\link[pscl]{ideal}} function from \code{pscl} package if \code{irt.type=="binary"};
+  Calls \code{\link[MCMCpack]{MCMCfactanal}} function from \code{MCMCpack} package if \code{irt.type=="ordered"} (still provisional).
   \item \code{"irtEM"}: IRT model via EM algorithm method (only one dimensional ideal points. This option is still provisional).
-  Calls \code{\link[emIRT]{binIRT}} function from \code{emIRT} package if \code{irt_type=="binary"};
-  Calls \code{\link[emIRT]{ordIRT}} function from \code{emIRT} package if \code{irt_type=="ordered"} (Only 3 category variable can be used).
+  Calls \code{\link[emIRT]{binIRT}} function from \code{emIRT} package if \code{irt.type=="binary"};
+  Calls \code{\link[emIRT]{ordIRT}} function from \code{emIRT} package if \code{irt.type=="ordered"} (Only 3 category variable can be used).
 }
 For \code{method=="ooc"}, the inputs \code{d1} and \code{d2} must be positive integer. 
 For all other methods, the inputs must be a dummy variable indication 0=Nay and 1=Yea (and 9 for unit nonresponse).
@@ -46,9 +46,9 @@ at this point.}
 constrained to have a positive (i.e., right-wing or conservative) score on each dimension.
 Used when \code{method} is \code{"ooc"}, \code{"oc"}, or \code{"wnominate"}.}
 
-\item{irt_type}{Used if \code{method} is \code{"irtMCMC"} or \code{"irtEM"}. 
+\item{irt.type}{Used if \code{method} is \code{"irtMCMC"} or \code{"irtEM"}. 
 If \code{"binary"} the binary IRT will be estimated. If \code{"ordered"}, 
-the ordered IRT will be estimated.}
+the ordered IRT will be estimated (the ordered option is provisional).}
 
 \item{...}{Additional arguments passed to the ideal point estimation function 
 called in \code{method}.}
@@ -57,7 +57,7 @@ called in \code{method}.}
 A list with the following elements
 \itemize{
   \item \code{ip}: Matrix of idealpoints.
-  \item \code{ip_f}: Model outputs including other information.
+  \item \code{info}: Outputs including other information.
 }
 }
 \description{

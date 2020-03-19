@@ -70,7 +70,7 @@ ordered responses." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ipbridging</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.6</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.8</span>
       </span>
     </div>
 
@@ -116,7 +116,6 @@ ordered responses.</p>
   <span class='no'>resp</span>,
   <span class='kw'>kernel</span> <span class='kw'>=</span> <span class='st'>"radial"</span>,
   <span class='kw'>tune.param</span> <span class='kw'>=</span> <span class='st'>"heuristics"</span>,
-  <span class='kw'>use.gpu</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
   <span class='kw'>param.heuristics.k</span> <span class='kw'>=</span> <span class='fl'>3</span>,
   <span class='kw'>param.heuristics.frac</span> <span class='kw'>=</span> <span class='fl'>0.5</span>,
   <span class='no'>...</span>
@@ -162,16 +161,6 @@ Following options are currently available:</p><ul>
 </ul></td>
     </tr>
     <tr>
-      <th>use.gpu</th>
-      <td><p>(THIS OPTION IS BETA VERSION, NOT CONFIRMED TO WORK) 
-If <code>TRUE</code>, the method replaces <code><a href='https://rdrr.io/pkg/e1071/man/tune.html'>best.tune</a></code> 
-and <code><a href='https://rdrr.io/pkg/e1071/man/svm.html'>svm</a></code> functions with 
-the <code>best.tune</code> and <code>svm</code> functions in <code>Rgtsvm</code> package, which contains
-GPU accelerate method of <code>svm</code> function. Install <code>Rgtsvm</code> manually. 
-You need to have Linux computer with NVIDIA GPU for the installation.
-Check <a href='https://github.com/Danko-Lab/Rgtsvm'>https://github.com/Danko-Lab/Rgtsvm</a> for more details.</p></td>
-    </tr>
-    <tr>
       <th>param.heuristics.k</th>
       <td><p>If <code>tune.param=="heuristics"</code>, the method uses 
 k nearest neighbors regression to estimate the noise variance in response variable
@@ -200,7 +189,6 @@ or <code><a href='https://rdrr.io/pkg/e1071/man/tune.html'>best.tune</a></code>.
 <ul>
 <li><p>Chang, C. &amp; C. Lin, LIBSVM: A Library for Support Vector Machines, <a href='http://www.csie.ntu.edu.tw/~cjlin/libsvm'>http://www.csie.ntu.edu.tw/~cjlin/libsvm</a>.</p></li>
 <li><p>Cherkassky, V. &amp; Y. Ma, 2004, "Practical Selection of SVM Parameters and Noise Estimation for SVM Regression", Neural Networks, 17, 113 - 126.</p></li>
-<li><p>Cotter, A., N. Srebro, &amp; J. Kreshet, 2011, "A GPU-Tailored Approach for Training Kernelized SVMs", 17th ACM SIGKDD Conference on Knowledge Discovery and Data Mining.</p></li>
 </ul>
 
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>

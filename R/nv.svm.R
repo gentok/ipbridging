@@ -28,13 +28,6 @@
 #'   If list is assigned here, the method use \code{\link[e1071]{best.tune}} function
 #'   to obtain the best perfomed model in the given parameter ranges. 
 #' }
-#' @param use.gpu (THIS OPTION IS BETA VERSION, NOT CONFIRMED TO WORK) 
-#' If \code{TRUE}, the method replaces \code{\link[e1071]{best.tune}} 
-#' and \code{\link[e1071]{svm}} functions with 
-#' the \code{best.tune} and \code{svm} functions in \code{Rgtsvm} package, which contains
-#' GPU accelerate method of \code{svm} function. Install \code{Rgtsvm} manually. 
-#' You need to have Linux computer with NVIDIA GPU for the installation.
-#' Check \url{https://github.com/Danko-Lab/Rgtsvm} for more details.  
 #' @param param.heuristics.k If \code{tune.param=="heuristics"}, the method uses 
 #' k nearest neighbors regression to estimate the noise variance in response variable
 #'  for the detemination of epsilon.
@@ -56,7 +49,6 @@
 #' \itemize{
 #'   \item Chang, C. & C. Lin, LIBSVM: A Library for Support Vector Machines, \url{http://www.csie.ntu.edu.tw/~cjlin/libsvm}.
 #'   \item Cherkassky, V. & Y. Ma, 2004, "Practical Selection of SVM Parameters and Noise Estimation for SVM Regression", Neural Networks, 17, 113 - 126.
-#'   \item Cotter, A., N. Srebro, & J. Kreshet, 2011, "A GPU-Tailored Approach for Training Kernelized SVMs", 17th ACM SIGKDD Conference on Knowledge Discovery and Data Mining.
 #' }
 #' 
 #' @export
@@ -64,180 +56,81 @@
 nv.svm <- function(xmat, resp, 
                    kernel="radial",
                    tune.param = "heuristics", 
-                   use.gpu = FALSE, 
                    param.heuristics.k = 3, 
                    param.heuristics.frac = 0.5, ...) {
   
   # cat(paste0("\nxmat dimension is ",dim(xmat)[1]," rows and ", dim(xmat)[2], " columns. ", "resp length is ", length(resp), ".\n\n"))
   
-  if (use.gpu==FALSE) {
-  # NOT using GPU
+  if (is.null(tune.param)) {
+    # No Tuning
+    
+    res <- e1071::svm(x=xmat, y=resp, scale=FALSE, kernel=kernel, ...)
+    coefs <- t(res$coefs) %*% res$SV
+    
+  } else if (is.list(tune.param)) {
+    # Tuning Parameter Values Specified  
+    
+    res <- e1071::best.tune(e1071::svm, train.x=xmat, train.y=resp, 
+                            ranges = tune.param, scale=FALSE, 
+                            kernel=kernel, ...)
+    coefs <- t(res$coefs) %*% res$SV
+    
+  } else if (tune.param=="heuristics") {
+    
+    # Drop missing cases
+    respcp <- resp[complete.cases(xmat & resp)]
+    xmatcp <- xmat[complete.cases(xmat & resp),,drop=FALSE]
+    
+    # Optimal Gamma
+    if (kernel=="radial") {
+      # Use heuristics to set gamma (follows sigest() function from kernlab package)
+      # Refer to sigest() function in kernlab package
+      m <- dim(xmatcp)[1]
+      n <- floor(param.heuristics.frac*m)
+      index <- sample(1:m, n, replace = TRUE)
+      index2 <- sample(1:m, n, replace = TRUE)
+      temp <- xmatcp[index,, drop=FALSE] - xmatcp[index2,,drop=FALSE]
+      dist <- rowSums(temp^2)
+      optg <- 1/quantile(dist[dist!=0],probs=c(0.5)) 
+      # Can be any value between 10-90%tile but choose median
+    } else {
+      optg <- 1/ncol(xmatcp) # Default for e1071::svm
+    }
+    
+    if (is.numeric(resp)) {
+      # Use Heuristics to set epsilon and C if using SVM EPS regression  
+      # Use eps regression and set C and epsilon by heuristics 
+      # described in Cherkassky & Ma (2004)
       
-    if (is.null(tune.param)) {
-      # No Tuning
-      
-      res <- e1071::svm(x=xmat, y=resp, scale=FALSE, kernel=kernel, ...)
+      # Optimal C
+      optc <- max( abs(c(mean(respcp)+3*sd(respcp))),  abs(c(mean(respcp)-3*sd(respcp))) )
+      # Optimal epsilon
+      resphat <- predict(caret::knnreg(x=xmatcp, y=respcp, k=param.heuristics.k), xmatcp)
+      tmp <- (length(respcp)^(1/5))*param.heuristics.k
+      s <- sqrt( (tmp/(tmp-1)) * (1/length(respcp)) * sum((respcp-resphat)^2))
+      opteps <- 3*s*sqrt(log(length(respcp))/length(respcp))
+      # Run EPS regression with Optimal C and Epsilon
+      res <- e1071::svm(x=xmat, y=resp, scale=FALSE, 
+                        type="eps-regression", cost=optc, epsilon=opteps, 
+                        kernel=kernel, gamma=optg, ...)
       coefs <- t(res$coefs) %*% res$SV
       
-    } else if (is.list(tune.param)) {
-      # Tuning Parameter Values Specified  
+    } else if (is.factor(resp)) {
+      # Only set gamma if resp is a factor
       
-      res <- e1071::best.tune(e1071::svm, train.x=xmat, train.y=resp, 
-                              ranges = tune.param, scale=FALSE, 
-                              kernel=kernel, ...)
+      res <- e1071::svm(x=xmat, y=resp, scale=FALSE, 
+                        kernel=kernel, 
+                        gamma=optg, ...)
       coefs <- t(res$coefs) %*% res$SV
-      
-    } else if (tune.param=="heuristics") {
-      
-      # Drop missing cases
-      respcp <- resp[complete.cases(xmat & resp)]
-      xmatcp <- xmat[complete.cases(xmat & resp),,drop=FALSE]
-      
-      # Optimal Gamma
-      if (kernel=="radial") {
-        # Use heuristics to set gamma (follows sigest() function from kernlab package)
-        # Refer to sigest() function in kernlab package
-        m <- dim(xmatcp)[1]
-        n <- floor(param.heuristics.frac*m)
-        index <- sample(1:m, n, replace = TRUE)
-        index2 <- sample(1:m, n, replace = TRUE)
-        temp <- xmatcp[index,, drop=FALSE] - xmatcp[index2,,drop=FALSE]
-        dist <- rowSums(temp^2)
-        optg <- 1/quantile(dist[dist!=0],probs=c(0.5)) 
-        # Can be any value between 10-90%tile but choose median
-      } else {
-        optg <- 1/ncol(xmatcp) # Default for e1071::svm
-      }
-
-      if (is.numeric(resp)) {
-        # Use Heuristics to set epsilon and C if using SVM EPS regression  
-        # Use eps regression and set C and epsilon by heuristics 
-        # described in Cherkassky & Ma (2004)
-        
-        # Optimal C
-        optc <- max( abs(c(mean(respcp)+3*sd(respcp))),  abs(c(mean(respcp)-3*sd(respcp))) )
-        # Optimal epsilon
-        resphat <- predict(caret::knnreg(x=xmatcp, y=respcp, k=param.heuristics.k), xmatcp)
-        tmp <- (length(respcp)^(1/5))*param.heuristics.k
-        s <- sqrt( (tmp/(tmp-1)) * (1/length(respcp)) * sum((respcp-resphat)^2))
-        opteps <- 3*s*sqrt(log(length(respcp))/length(respcp))
-        # Run EPS regression with Optimal C and Epsilon
-        res <- e1071::svm(x=xmat, y=resp, scale=FALSE, 
-                          type="eps-regression", cost=optc, epsilon=opteps, 
-                          kernel=kernel, gamma=optg, ...)
-        coefs <- t(res$coefs) %*% res$SV
-        
-      } else if (is.factor(resp)) {
-        # Only set gamma if resp is a factor
-        
-        res <- e1071::svm(x=xmat, y=resp, scale=FALSE, 
-                          kernel=kernel, 
-                          gamma=optg, ...)
-        coefs <- t(res$coefs) %*% res$SV
-        
-      } else {
-        stop("Invalid 'resp' class!")
-      }
       
     } else {
-      stop("Invalid 'tune.param' argument!")
+      stop("Invalid 'resp' class!")
     }
-
+    
   } else {
-  ## USE GPU
-      
-    if (!requireNamespace("Rgtsvm", quietly = TRUE)) {
-      stop("Package \"Rgtsvm\" needed for this option to work. Please install it.",
-           call. = FALSE)
-    }
-    
-    settype <- ifelse(is.numeric(resp),"eps-regression", "C-classification")
-    
-    if (is.null(tune.param)) {
-      # No Tuning
-      
-      res <- Rgtsvm::svm(x=xmat, y=resp, scale=FALSE, type=settype, 
-                         kernel=kernel, ...)
-      coefs <- t(res$coefs[seq(1,nrow(res$SV))]) %*% res$SV
-      
-    } else if (is.list(tune.param)) {
-      # Tuning Parameter Values Specified  
-      
-      ## SVM with Tuning, using GPU through Rgtsvm package (only Linux)
-      
-      res <- Rgtsvm::tune.svm(Rgtsvm::svm, x=xmat, y=resp, 
-                               degree=tune.param$degree,
-                               gamma=tune.param$gamma,
-                               coef0=tune.param$coef0,
-                               cost=tune.param$cost,
-                               nu=tune.param$nu,
-                               class.weights=tune.param$class.weights,
-                               epsilon=tune.param$epsilon, 
-                               type = settype, scale=FALSE, 
-                              kernel=kernel, ...)
-      res <- res$best.model
-      coefs <- t(res$coefs[seq(1,nrow(res$SV))]) %*% res$SV
-      
-    } else if (tune.param=="heuristics") {
-      
-      # Drop missing cases
-      respcp <- resp[complete.cases(xmat & resp)]
-      xmatcp <- xmat[complete.cases(xmat & resp),,drop=FALSE]
-      
-      if (kernel=="radial") {
-        # Use heuristics to set gamma (follows sigest() function from kernlab package)
-        # Refer to sigest() function in kernlab package
-        m <- dim(xmatcp)[1]
-        n <- floor(param.heuristics.frac*m)
-        index <- sample(1:m, n, replace = TRUE)
-        index2 <- sample(1:m, n, replace = TRUE)
-        temp <- xmatcp[index,, drop=FALSE] - xmatcp[index2,,drop=FALSE]
-        dist <- rowSums(temp^2)
-        optg <- 1/quantile(dist[dist!=0], probs=c(0.5)) 
-        # Can be any value between 10-90%tile but choose median
-      } else {
-        optg <- 1/ncol(xmatcp)
-      }
-      
-      if (is.numeric(resp)) {
-        # Use Heuristics to set epsilon and C if using SVM EPS regression  
-        # Use eps regression and set C and epsilon by heuristics 
-        # described in Cherkassky & Ma (2004)
-        
-        # Optimal C
-        optc <- max( abs(c(mean(respcp)+3*sd(respcp))),  abs(c(mean(respcp)-3*sd(respcp))) )
-        # Optimal epsilon
-        resphat <- predict(caret::knnreg(x=xmatcp, y=respcp, k=param.heuristics.k), xmatcp)
-        tmp <- (length(respcp)^(1/5))*param.heuristics.k
-        s <- sqrt( (tmp/(tmp-1)) * (1/length(respcp)) * sum((respcp-resphat)^2))
-        opteps <- 3*s*sqrt(log(length(respcp))/length(respcp))
-        
-        # Run EPS regression with Optimal C and Epsilon
-        res <- Rgtsvm::svm(x=xmat, y=resp, scale=FALSE, 
-                          type="eps-regression", 
-                          kernel=kernel, 
-                          cost=optc, epsilon=opteps,
-                          gamma=optg,
-                          ...)
-        coefs <- t(res$coefs[seq(1,nrow(res$SV))]) %*% res$SV
-        
-      } else if (is.factor(resp)) {
-        # Set only gamma if resp is a factor
-        
-        res <- Rgtsvm::svm(x=xmat, y=resp, scale=FALSE, type=settype, 
-                           kernel=kernel, gamma=optg, ...)
-        coefs <- t(res$coefs[seq(1,nrow(res$SV))]) %*% res$SV
-        
-      } else {
-        stop("Invalid 'resp' class!")
-      }
-      
-    } else {
-      stop("Invalid 'tune.param' argument!")
-    }
-    
+    stop("Invalid 'tune.param' argument!")
   }
-
+  
   return(coefs)
   
 }

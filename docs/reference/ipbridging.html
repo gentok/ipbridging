@@ -70,7 +70,7 @@ two separate datasets." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ipbridging</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.6</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.8</span>
       </span>
     </div>
 
@@ -112,8 +112,8 @@ two separate datasets.</p>
     </div>
 
     <pre class="usage"><span class='fu'>ipbridging</span>(
-  <span class='no'>d1</span>,
-  <span class='no'>d2</span>,
+  <span class='kw'>d1</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
+  <span class='kw'>d2</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>bridge.method</span> <span class='kw'>=</span> <span class='st'>"procrustes"</span>,
   <span class='kw'>anchors.method</span> <span class='kw'>=</span> <span class='st'>"subsample"</span>,
   <span class='kw'>anchors.subsample.method</span> <span class='kw'>=</span> <span class='st'>"random"</span>,
@@ -122,12 +122,14 @@ two separate datasets.</p>
   <span class='kw'>anchors.subsample.wgt.d2</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>anchors.selectrows.d1</span> <span class='kw'>=</span> <span class='fl'>1</span>:<span class='fl'>100</span>,
   <span class='kw'>anchors.selectrows.d2</span> <span class='kw'>=</span> <span class='fl'>1</span>:<span class='fl'>100</span>,
+  <span class='kw'>anchors.selectrows.data</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>anchors.newdata</span> <span class='kw'>=</span> <span class='kw'>NULL</span>,
   <span class='kw'>input.type</span> <span class='kw'>=</span> <span class='st'>"responses"</span>,
   <span class='kw'>ip.method</span> <span class='kw'>=</span> <span class='st'>"ooc"</span>,
   <span class='kw'>ip.dims</span> <span class='kw'>=</span> <span class='fl'>2</span>,
   <span class='kw'>ip.polarity.d1</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>, <span class='fl'>1</span>),
   <span class='kw'>ip.polarity.d2</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>, <span class='fl'>1</span>),
+  <span class='kw'>tr.trans.d2</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
   <span class='kw'>tr.opt</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
   <span class='kw'>tr.opt.iter.n</span> <span class='kw'>=</span> <span class='fl'>10000</span>,
   <span class='kw'>tr.opt.sample.n</span> <span class='kw'>=</span> <span class='fl'>30</span>,
@@ -160,10 +162,10 @@ columns are ideal point dimensions).</p></td>
       <td><p>Method of bridging. Currently, following methods are aviailable:</p><ul>
 <li><p><code>"procrustes"</code> (default): Procrustes transformation method. 
   Based on anchor cases, this method provides restricted non-parametric procedure to 
-  find optimal transformation matrix to bridge ideal point estimates (calls <code><a href='bridge.homography.html'>bridge.homography</a></code>).</p></li>
+  find optimal transformation matrix to bridge ideal point estimates.</p></li>
 <li><p><code>"homography"</code>: Homography transformation method. 
   Based on anchor cases, this method provides non-parametric procedure to 
-  find optimal transformation matrix to bridge ideal point estimates (calls <code><a href='bridge.homography.html'>bridge.homography</a></code>).</p></li>
+  find optimal transformation matrix to bridge ideal point estimates.</p></li>
 <li><p><code>"joint"</code>: Joint scaling method. Simple method to combine <code>d1</code> and 
   <code>d2</code> and jointly compute ideal points. The procedure described in Jessee (2016).</p></li>
 <li><p><code>"modelmap"</code>: Use the model estimated on <code>d1</code> to map
@@ -171,7 +173,7 @@ columns are ideal point dimensions).</p></td>
   anchor cases. Can be used only if <code>input.type=="responses"</code> and 
   <code>ip.method=="irtMCMC"</code>. See Jessee (2016).</p></li>
 <li><p><code>"olsmap"</code>: OLS mapping method, Based on anchor cases, 
-  use OLs regression to map <code>d2</code> ideal point coordinates on 
+  use OLS regression to map <code>d2</code> ideal point coordinates on 
   <code>d1</code> ideal point space. The procedure described in Shor et al. (2010).</p></li>
 <li><p><code>"anchoredpooling"</code>: Use anchor cases to pool <code>d1</code> and <code>d2</code> 
   and jointly compute ideal points. Issues/questions in two datasets are assumed 
@@ -251,6 +253,13 @@ the above condition is not required.</p></td>
 Specify the row numbers of anchors in <code>d2</code>.</p></td>
     </tr>
     <tr>
+      <th>anchors.selectrows.data</th>
+      <td><p>Required if <code>anchors.method=="selectrows"</code>. 
+Specify the dataset where anchors are originally found. 
+Must be the same length as <code>anchors.selectrows.d1</code>. Allowed values are 1 (=<code>d1</code>), 
+2 (=<code>d2</code>) and 3 (=new data).</p></td>
+    </tr>
+    <tr>
       <th>anchors.newdata</th>
       <td><p>Matrix or data.frame of anchors. Must have identical 
 columns as <code>d1</code> and <code>d2</code>. Used if <code>anchors.method=="newdata"</code>.</p></td>
@@ -290,6 +299,12 @@ Used when <code>ip.method</code> is <code>"ooc"</code>, <code>"oc"</code>, or <c
       <td><p>A vector specifying the row number of the <code>d2</code>'s respondent(s) 
 constrained to have a positive (i.e., right-wing or conservative) score on each dimension. 
 Used when <code>ip.method</code> is <code>"ooc"</code>, <code>"oc"</code>, or <code>"wnominate"</code>.</p></td>
+    </tr>
+    <tr>
+      <th>tr.trans.d2</th>
+      <td><p>Used if <code>bridge.method</code> is a transformation method (i.e., <code>"procrustes"</code>, <code>"homography"</code>, or <code>"olsmap"</code>). 
+If <code>TRUE</code> (default), transform <code>d2</code> ideal points to map them on <code>d1</code> space.
+If <code>FALSE</code>, transform <code>d1</code> ideal points to map them on <code>d2</code> space.</p></td>
     </tr>
     <tr>
       <th>tr.opt</th>
@@ -361,8 +376,7 @@ called in <code>ip.method</code>.</p></td>
     <h2 class="hasAnchor" id="see-also"><a class="anchor" href="#see-also"></a>See also</h2>
 
     <div class='dont-index'><p><code><a href='ipest.html'>ipest</a></code>, <code><a href='setanchors.html'>setanchors</a></code>, 
-<code><a href='bridge.procrustes.html'>bridge.procrustes</a></code>, <code><a href='bridge.homography.html'>bridge.homography</a></code>, 
-<code><a href='bridge.olsmap.html'>bridge.olsmap</a></code>,
+<code><a href='bridge.linearmap.html'>bridge.linearmap</a></code>,
 <code><a href='oocflex.html'>oocflex</a></code>, <code><a href='https://rdrr.io/pkg/oc/man/oc.html'>oc</a></code>, <code><a href='https://rdrr.io/pkg/basicspace/man/blackbox.html'>blackbox</a></code>,
 <code><a href='https://rdrr.io/pkg/wnominate/man/wnominate.html'>wnominate</a></code>, <code><a href='https://rdrr.io/pkg/pscl/man/ideal.html'>ideal</a></code></p></div>
 

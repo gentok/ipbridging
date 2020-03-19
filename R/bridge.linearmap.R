@@ -1,4 +1,4 @@
-#' Bridging Two Ideal Point Estimates with Homography Transformation Method
+#' Bridging Two Ideal Point Estimates with Linear Transformation Method
 #' 
 #' @param ip1 Matrix or data.frame of 'reference' ideal points 
 #' (i.e., \code{ip2} ideal points will be transformed and mapped to \code{ip1} space).
@@ -8,6 +8,20 @@
 #' @param anchorrows.ip1 Vector of row number of anchoring respondents in \code{ip1}.
 #' @param anchorrows.ip2 Vector of row number of anchoring respondents in \code{ip2}.
 #' Must be the same length as \code{anchorrows.ip1}.
+#' @param method Method of bridging. Currently, following methods are aviailable:
+#' \itemize{
+#'   \item \code{"procrustes"} (default): Procrustes transformation method. 
+#'   Based on anchor cases, this method provides restricted non-parametric procedure to 
+#'   find optimal transformation matrix to bridge ideal point estimates.
+#'   \item \code{"homography"}: Homography transformation method. 
+#'   Based on anchor cases, this method provides non-parametric procedure to 
+#'   find optimal transformation matrix to bridge ideal point estimates.
+#'   \item \code{"olsmap"}: OLS mapping method, Based on anchor cases, 
+#'   use OLS regression to map \code{d2} ideal point coordinates on 
+#'   \code{d1} ideal point space.  
+#' }
+#' @param trans.ip2 If \code{TRUE} (default), transform \code{ip2} to map them on \code{ip1} space.
+#' If \code{FALSE}, transform \code{ip1} to map them on \code{ip2} space.
 #' @param opt If \code{TRUE}, conduct optimization of transformation through RANSAC
 #' (random sample consensus). The default is \code{FALSE}.
 #' @param opt.iter.n Number of iteration in the optimization of transformation 
@@ -28,26 +42,28 @@
 #' 
 #' @return A list with the following elements along with specified argument values:
 #' \itemize{
+#'   \item \code{ip2_trans} or \code{ip1_trans}: Transformed matrix.
 #'   \item \code{ip1}: Original \code{ip1} matrix.
-#'   \item \code{ip2_trans}: Transformed \code{ip2} matrix mapped on \code{ip1} space.
-#'   \item \code{ip2_orig}: Original \code{ip2} matrix
+#'   \item \code{ip2}: Original \code{ip2} matrix
 #' }
 #' 
 #' @author Tzu-Ping Liu \email{jamesliu0222@@gmail.com}, Gento Kato \email{gento.badger@@gmail.com}, and Sam Fuller \email{sjfuller@@ucdavis.edu}.
 #' 
 #' @export
 
-bridge.homography <- function(ip1,
-                              ip2,
-                              anchorrows.ip1,
-                              anchorrows.ip2, 
-                              opt = FALSE,
-                              opt.iter.n = 10000,
-                              opt.sample.n = 30,
-                              opt.th.inline = 0.5,
-                              blend = TRUE,
-                              blend.th1 = 0.05, 
-                              blend.th2 = 0.15) {
+bridge.linearmap <- function(ip1,
+                             ip2,
+                             anchorrows.ip1,
+                             anchorrows.ip2,
+                             method = "procrustes",
+                             trans.ip2 = TRUE,
+                             opt = FALSE,
+                             opt.iter.n = 10000,
+                             opt.sample.n = 30,
+                             opt.th.inline = 0.5,
+                             blend = TRUE,
+                             blend.th1 = 0.05, 
+                             blend.th2 = 0.15) {
   
   ## Check inputs
   if (is.vector(ip1)) {
@@ -67,9 +83,27 @@ bridge.homography <- function(ip1,
   if (is.data.frame(ip1)) ip1 <- as.matrix(ip1)
   if (is.data.frame(ip2)) ip2 <- as.matrix(ip2)
   
-  ## For now, the method is only applicable to 2-D ideal point coordinates
-  if (ncol(ip1)!=2) stop("The method is currently only applicable to 2-D coordinates!")
+  ## For now, the homography method is only applicable to 
+  ## 2-D ideal point coordinates
+  if (method=="homography") {
+    if (ncol(ip1)!=2) stop("The homography method is currently only applicable to 2-D coordinates!")
+  }
   
+  ## If transforming ip1 instead of ip2...
+  if (trans.ip2==FALSE) {
+    
+    # Replacing Ideal Points
+    tmp <- ip1
+    ip1 <- ip2
+    ip2 <- tmp
+    
+    # Replacing anchorrows
+    tmp <- anchorrows.ip1
+    anchorrows.ip1 <- anchorrows.ip2
+    anchorrows.ip2 <- tmp
+    
+  }
+
   ## Exclude Missing Cases from the Analysis, if there are any
   comprows.ip1 <- which(complete.cases(ip1))
   comprows.ip2 <- which(complete.cases(ip2))
@@ -95,14 +129,14 @@ bridge.homography <- function(ip1,
       anchorrows.ip1 <- anchorrows.ip1[-acmisloc]
       anchorrows.ip2 <- anchorrows.ip2[-acmisloc]
     }
-
+    
   } else {
     
     ip1o <- NULL
     ip2o <- NULL
-
+    
   }
-
+  
   ## Generating Anchors 
   ac1 <- ip1[which(ip1.rowid %in% anchorrows.ip1),,drop=FALSE]
   ac2 <- ip2[which(ip2.rowid %in% anchorrows.ip2),,drop=FALSE]
@@ -112,26 +146,38 @@ bridge.homography <- function(ip1,
   ##########################################
   
   ## For 2-D Coordinates
-  if (ncol(ip1)==2) {
-  
-    if (opt==TRUE) {
+  if (opt==TRUE) {
+    
+    ## Initial Values in Optimization
+    num_in <- 0
+    f_pool <- 0
+    f_inl <- 0
+    ite <- 1
+    
+    while (ite <= opt.iter.n) {
       
-      ## Initial Values in Optimization
-      num_in <- 0
-      f_pool <- 0
-      f_inl <- 0
-      ite <- 1
+      ## Sampled Anchors for the simulation
+      pool <- sample.int(nrow(ac2), size=opt.sample.n, replace=FALSE)
+      ac1_r <- ac1[pool,]
+      ac2_r <- ac2[pool,]
       
-      while (ite <= opt.iter.n) {
+      if (method=="procrustes") {
         
-        ## Sampled Anchors for the simulation
-        pool <- sample.int(nrow(ac2), size=opt.sample.n, replace=FALSE)
-        ac1_r <- ac1[pool,]
-        ac2_r <- ac2[pool,]
+        ######################################
+        ## Transforming sampled respondents ##
+        ######################################
+        p <- MCMCpack::procrustes(ac2_r, ac1_r, translation=TRUE)
         
-        #####################################
-        ## Transforming sampled respondents #
-        #####################################
+        ##############################################################
+        ## Transforming the rest of (supposed) matching respondents ##
+        ##############################################################
+        ac2_trans <- p$s*(ac2%*%p$R) + (matrix(rep(1,nrow(ac2)), ncol=1) %*% t(p$tt))
+
+      } else if (method=="homography") {
+        
+        ######################################
+        ## Transforming sampled respondents ##
+        ######################################
         A <- do.call("rbind", 
                      lapply(1:nrow(ac2_r), 
                             function(i) matrix(c(ac2_r[i,],1,0,0,0,
@@ -161,26 +207,65 @@ bridge.homography <- function(ip1,
                                       (h[7]*ac2[i,1] + h[8]*ac2[i,2] + 1)),
                                   nrow=1)
                   ))
+
+      } else if (method=="olsmap") {
         
-        ## Find the number of inline respondents (under specified threshold)
-        diff <- ac2_trans - ac1
-        d2 <- diff^2
-        euc2 <- apply(d2, 1, sum)
-        eucd <- sqrt(euc2)
-        t_num_in <- length(which(eucd <= opt.th.inline))
-        inline <- which(eucd <= opt.th.inline)
+        #####################################
+        ## Transforming sampled respondents #
+        #####################################
+        # Regression Formula
+        f <- as.formula(paste("k ~", paste(colnames(ac2_r), collapse="+")))
+        ## Models
+        acmod <- plyr::alply(ac1_r, 2, 
+                             function(k) lm(f, data=as.data.frame(cbind(k, ac2_r))))
         
-        ## Update Output if more inline respondents found than previous iterations
-        if(t_num_in > num_in){
-          num_in <- t_num_in
-          f_pool <- pool
-          f_inl <- inline
-        }
+        ##############################################################
+        ## Transforming the rest of (supposed) matching respondents ##
+        ##############################################################
+        ## Prediction
+        ac2df <- as.data.frame(ac2)
+        colnames(ac2df) <- colnames(ac2)
+        ac2_trans <- sapply(acmod, function(k) predict(k, ac2df))
+        colnames(ac2_trans) <- colnames(ac2)
+
+      } else {
         
-        ## Iteration Count
-        ite <- ite + 1
-        
+        stop("invalid 'method' value!")
       }
+
+      ## Find the number of inline respondents (under specified threshold)
+      diff <- ac2_trans - ac1
+      d2 <- diff^2
+      euc2 <- apply(d2, 1, sum)
+      eucd <- sqrt(euc2)
+      t_num_in <- length(which(eucd <= opt.th.inline))
+      inline <- which(eucd <= opt.th.inline)
+      
+      ## Update Output if more inline respondents found than previous iterations
+      if(t_num_in > num_in){
+        num_in <- t_num_in
+        f_pool <- pool
+        f_inl <- inline
+      }
+      
+      ## Iteration Count
+      ite <- ite + 1
+      
+    }
+    
+    if (method=="procrustes") {
+      
+      #######################################
+      ## Re-estimating p with all inliners ##
+      #######################################
+      r_p <- MCMCpack::procrustes(ac2[f_inl,], ac1[f_inl,], translation=TRUE)
+      
+      #########################################
+      ## Transforming the "real" respondents ##
+      #########################################
+      ip2_trans <- r_p$s*(ip2%*%r_p$R) + (matrix(rep(1,nrow(ip2)), ncol=1) %*% t(r_p$tt))
+      
+    } else if (method=="homography") {
       
       #######################################
       ## Re-estimating h with all inliners ##
@@ -215,7 +300,46 @@ bridge.homography <- function(ip1,
                                 nrow=1)
                 ))
       
-    } else if (opt==FALSE) {
+    } else if (method=="olsmap") {
+      
+      ###########################################
+      ## Re-estimating model with all inliners ##
+      ###########################################
+      # Regression Formula
+      r_f <- as.formula(paste("k ~", paste(colnames(ac2[f_inl,]), collapse="+")))
+      ## Models
+      r_acmod <- plyr::alply(ac1[f_inl,], 2, 
+                             function(k) lm(r_f, data=as.data.frame(cbind(k, ac2[f_inl,]))))
+      
+      #########################################
+      ## Transforming the "real" respondents ##
+      #########################################
+      ## Prediction
+      ip2df <- as.data.frame(ip2)
+      colnames(ip2df) <- colnames(ac2)
+      ip2_trans <- sapply(r_acmod, function(k) predict(k, ip2df))
+      colnames(ip2_trans) <- colnames(ip2)
+
+    } else {
+      
+      stop("invalid 'method' value!")
+    }
+
+  } else if (opt==FALSE) {
+    
+    if (method=="procrustes") {
+      
+      ###############################
+      ## Estimating Transformation ##
+      ###############################
+      r_p <- MCMCpack::procrustes(ac2, ac1, translation=TRUE)
+      
+      #############################
+      ## Transforming All Points ##
+      #############################
+      ip2_trans <- r_p$s*(ip2%*%r_p$R) + (matrix(rep(1,nrow(ip2)), ncol=1) %*% t(r_p$tt))
+
+    } else if (method=="homography") {
       
       ###################################
       ## Estimating h with all anchors ##
@@ -249,21 +373,42 @@ bridge.homography <- function(ip1,
                                     (r_h[7]*ip2[i,1] + r_h[8]*ip2[i,2] + 1)),
                                 nrow=1)
                 ))
+
+    } else if (method=="olsmap") {
       
+      ###############################
+      ## Estimating Transformation ##
+      ###############################
+      # Regression Formula
+      f <- as.formula(paste("k ~", paste(colnames(ac2), collapse="+")))
+      ## Models
+      acmod <- plyr::alply(ac1, 2, function(k) lm(f, data=as.data.frame(cbind(k, ac2))))
+      
+      #############################
+      ## Transforming All Points ##
+      #############################
+      ## Prediction
+      ip2df <- as.data.frame(ip2)
+      colnames(ip2df) <- colnames(ac2)
+      ip2_trans <- sapply(acmod, function(k) predict(k, ip2df))
+      colnames(ip2_trans) <- colnames(ip2)
+
     } else {
       
-      stop("invalid 'blend' value!")
-      
+      stop("invalid 'method' value!")
     }
 
+  } else {
+    
+    stop("invalid 'opt' value!")
+    
   }
-
 
   ## Create transformed coordinates ##
   if (blend==FALSE) {
     
     ip2_trans_f <- ip2_trans
-
+    
   } else if (blend==TRUE) {
     
     ##############
@@ -293,20 +438,22 @@ bridge.homography <- function(ip1,
       } 
       
     }
+    # Transformed Coordinates
     ip2_trans_f <- matrix(NA, nrow=nrow(ip2), ncol=ncol(ip2))
-    ## For non-anchors, set blended IPs
-    ip2_trans_f[-which(ip2.rowid %in% anchorrows.ip2),] <- 
-      do.call("rbind", lapply(seq(1,nrow(ip2))[-which(ip2.rowid %in% anchorrows.ip2)], ip2_blend) )
-    ## For anchors, just use their ip1 coordinates
-    ip2_trans_f[which(ip2.rowid %in% anchorrows.ip2),] <- 
-      ip1[which(ip1.rowid %in% anchorrows.ip1),]
+    ip2_trans_f <- do.call("rbind", lapply(seq(1,nrow(ip2)), ip2_blend))
+    # ## For non-anchors, set blended IPs
+    # ip2_trans_f[-which(ip2.rowid %in% anchorrows.ip2),] <- 
+    #   do.call("rbind", lapply(seq(1,nrow(ip2))[-which(ip2.rowid %in% anchorrows.ip2)], ip2_blend) )
+    # ## For anchors, just use their ip1 coordinates
+    # ip2_trans_f[which(ip2.rowid %in% anchorrows.ip2),] <- 
+    #   ip1[which(ip1.rowid %in% anchorrows.ip1),]
     
   } else {
+    
     stop("invalid 'blend' value!")
+    
   }
   
-  
-
   ################################
   ## Putting NA Values Back In! ##
   ################################
@@ -322,16 +469,38 @@ bridge.homography <- function(ip1,
   ######################
   ## Compiling Output ##
   ######################
-  out <- list(ip1=ip1, 
-              ip2_trans = ip2_trans_f,
-              ip2_orig = ip2,
-              anchorrows.ip1 = anchorrows.ip1,
-              anchorrows.ip2 = anchorrows.ip2, 
-              opt = opt,
-              opt.iter.n = opt.iter.n,
-              opt.sample.n = opt.sample.n,
-              opt.th.inline = opt.th.inline,
-              blend.th1 = blend.th1, 
-              blend.th2 = blend.th2)
+  if (trans.ip2) {
+    
+    out <- list(ip2_trans = ip2_trans_f,
+                ip1=ip1, 
+                ip2=ip2,
+                anchorrows.ip1 = anchorrows.ip1,
+                anchorrows.ip2 = anchorrows.ip2,
+                method = method,
+                opt = opt,
+                opt.iter.n = opt.iter.n,
+                opt.sample.n = opt.sample.n,
+                opt.th.inline = opt.th.inline,
+                blend.th1 = blend.th1, 
+                blend.th2 = blend.th2)
+
+  } else {
+    
+    out <- list(ip1_trans = ip2_trans_f,
+                ip1=ip2, 
+                ip2=ip1,
+                anchorrows.ip1 = anchorrows.ip2,
+                anchorrows.ip2 = anchorrows.ip1,
+                method = method,
+                opt = opt,
+                opt.iter.n = opt.iter.n,
+                opt.sample.n = opt.sample.n,
+                opt.th.inline = opt.th.inline,
+                blend.th1 = blend.th1, 
+                blend.th2 = blend.th2)
+    
+  }
+  
+  return(out)
   
 }

@@ -8,7 +8,7 @@ Sam Fuller (UC Davis)
 
 ## Description
 
-Bridging Ideal Point Estimates. This package provides parametric and non-parametric methods to bridge ideal point estimates generated from two (or more) separate data sets. 
+Bridging Ideal Point Estimates. This package provides parametric and non-parametric methods to bridge ideal point estimates generated from two separate data sets. 
 The package website is published [HERE](https://gentok.github.io/ipbridging/).
 
 ## Installation
@@ -42,12 +42,19 @@ After successfully installing <code>oc</code> and <code>ooc</code> package, you 
 
 ## Main Functions
 
-* <code>[ipbridging](https://gentok.github.io/ipbridging/reference/ipbridging.html)</code>: The main function from this package. It implements methods to bridge ideal point estimates generated from two data sets.
+* <code>[ipbridging](https://gentok.github.io/ipbridging/reference/ipbridging.html)</code>: The main function from this package. It implements various methods to bridge ideal point estimates generated from two data sets.
+* <code>[ipest](https://gentok.github.io/ipbridging/reference/ipest.html)</code>: The toolbox function to compute ideal points through various methods, including, but not limited to OC (Optimal Classification), OOC (Ordered Optimal Classification), W-NOMINATE, Bayesian IRT, and Blackbox scaling.
 * <code>[oocflex](https://gentok.github.io/ipbridging/reference/oocflex.html)</code>: The implementation of Ordered Optimal Classification (OOC) with flexible estimation strategies. This function is the modified version of <code>ooc</code> function in [ooc package](https://github.com/tzuliu/ooc).
+
+## Major Sub Functions
+
+* <code>[setanchors](https://gentok.github.io/ipbridging/reference/setanchors.html)</code>: This function selects anchor cases from two separate datasets, and prepare two datasets that contain anchors. Used in the part of <code>[ipbridging](https://gentok.github.io/ipbridging/reference/ipbridging.html)</code>.
+* <code>[bridge.linearmap](https://gentok.github.io/ipbridging/reference/bridge.linearmap.html)</code>: The implementation of ideal points bridging through linear transformation methods. Used in the part of <code>[ipbridging](https://gentok.github.io/ipbridging/reference/ipbridging.html)</code>.
 
 ## Updates Log
 
-* 03/12/2020 Version 0.0.08 (beta version 8: Made Significant Changes)
+* 03/19/2020 Version 0.0.08 (beta version 9: Made Significant Changes)
+* 03/12/2020 Version 0.0.07 (beta version 8: Made Significant Changes)
 * 02/03/2020 Version 0.0.06 (beta version 7)
 * 01/29/2020 Version 0.0.05 (beta version 6)
 * 01/29/2020 Version 0.0.04 (beta version 5)

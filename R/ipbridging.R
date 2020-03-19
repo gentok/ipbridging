@@ -3,22 +3,28 @@
 #' @description Toolbox function that bridges ideal point estimates computed from 
 #' two separate datasets. 
 #' 
-#' @param d1 Matrix or data.frame of 'reference' responses.
-#' (i.e., In mapping methods, ideal points based on \code{d2} will be 
-#' transformed and mapped to ideal point space based on \code{d1}).
-#' Rows are resepondents and columns are questions/issues. 
-#' Alternatively, if \code{input.type=="idealpoints"}, one can directly 
-#' set matrix or data.frame of ideal points (rows are respondents and 
-#' columns are ideal point dimensions).
-#' @param d2 Matrix or data.frame of responses (or ideal points) to be transformed.
+#' @param d1 First dataset that contains some policy preferences. 
+#' Must be one of following types:
+#' \itemize{
+#'   \item If \code{input.type=="responses"}, matrix or data.frame of responses. 
+#'   Rows are resepondents and columns are questions/issues.
+#'   \item If \code{input.type=="idealpoints"}, matrix or data.frame of ideal points.
+#'   Rows are respondents and columns are ideal point dimensions.
+#'   \item If ideal points are estimated by \code{\link{ipest}} function, 
+#'   one can assign \code{ipest.out} object directly to here. 
+#'   \item If anchored data is created using \code{\link{setanchors}} function, 
+#'   one can leave \code{d1==NULL} and set \code{anchors.out} object to 
+#'   \code{anchor.method} argument. 
+#' }
+#' @param d2 Second dataset that contains some policy preferences. Must be the same class of object as \code{d1}.
 #' @param bridge.method Method of bridging. Currently, following methods are aviailable:
 #' \itemize{
 #'   \item \code{"procrustes"} (default): Procrustes transformation method. 
 #'   Based on anchor cases, this method provides restricted non-parametric procedure to 
-#'   find optimal transformation matrix to bridge ideal point estimates (calls \code{\link{bridge.homography}}).
+#'   find optimal transformation matrix to bridge ideal point estimates.
 #'   \item \code{"homography"}: Homography transformation method. 
 #'   Based on anchor cases, this method provides non-parametric procedure to 
-#'   find optimal transformation matrix to bridge ideal point estimates (calls \code{\link{bridge.homography}}).
+#'   find optimal transformation matrix to bridge ideal point estimates.
 #'   \item \code{"joint"}: Joint scaling method. Simple method to combine \code{d1} and 
 #'   \code{d2} and jointly compute ideal points. The procedure described in Jessee (2016).
 #'   \item \code{"modelmap"}: Use the model estimated on \code{d1} to map
@@ -26,7 +32,7 @@
 #'   anchor cases. Can be used only if \code{input.type=="responses"} and 
 #'   \code{ip.method=="irtMCMC"}. See Jessee (2016).
 #'   \item \code{"olsmap"}: OLS mapping method, Based on anchor cases, 
-#'   use OLs regression to map \code{d2} ideal point coordinates on 
+#'   use OLS regression to map \code{d2} ideal point coordinates on 
 #'   \code{d1} ideal point space. The procedure described in Shor et al. (2010). 
 #'   \item \code{"anchoredpooling"}: Use anchor cases to pool \code{d1} and \code{d2} 
 #'   and jointly compute ideal points. Issues/questions in two datasets are assumed 
@@ -49,8 +55,13 @@
 #'   selection if \code{input.type=="idealpoints"}. 
 #'   \item \code{"newdata"} Use new dataset that only contains anchors. The data.frame
 #'   assigned in \code{anchors.newdata} are appended to both \code{d1} and \code{d2}. 
+#'   \item One can also set the output from \code{\link{setanchors}} function directly to 
+#'   this argument. Then, if \code{d1,d2==NULL}, the ideal points are estimated using 
+#'   datasets contained in \code{anchors.out} object. If \code{ipest.out} objects are 
+#'   assigned to \code{d1,d2} or \code{input.type=="idealpoints"}, \code{anchors.out} 
+#'   object is used only for the bridging purpose.
 #' }
-#' Note that \code{"subsample"} and \code{"newdata"} requires \code{d1} and \code{d2}
+#' Note that \code{"subsample"} and \code{"newdata"} require \code{d1} and \code{d2}
 #' to have identical columns. This is not required for \code{"selectrows"}. 
 #' @param anchors.subsample.method Method to sample anchors. Following values 
 #' are currently available: 
@@ -86,6 +97,10 @@
 #' the above condition is not required. 
 #' @param anchors.selectrows.d2 Must be the vector of positive integers.  
 #' Specify the row numbers of anchors in \code{d2}.
+#' @param anchors.selectrows.data Required if \code{anchors.method=="selectrows"}. 
+#' Specify the dataset where anchors are originally found. 
+#' Must be the same length as \code{anchors.selectrows.d1}. Allowed values are 1 (=\code{d1}), 
+#' 2 (=\code{d2}) and 3 (=new data).  
 #' @param anchors.newdata Matrix or data.frame of anchors. Must have identical 
 #' columns as \code{d1} and \code{d2}. Used if \code{anchors.method=="newdata"}. 
 #' @param input.type The input type of \code{d1} and \code{d2}. If \code{"responses"} (default), 
@@ -111,6 +126,9 @@
 #' @param ip.polarity.d2 A vector specifying the row number of the \code{d2}'s respondent(s) 
 #' constrained to have a positive (i.e., right-wing or conservative) score on each dimension. 
 #' Used when \code{ip.method} is \code{"ooc"}, \code{"oc"}, or \code{"wnominate"}. 
+#' @param tr.trans.d2 Used if \code{bridge.method} is a transformation method (i.e., \code{"procrustes"}, \code{"homography"}, or \code{"olsmap"}). 
+#' If \code{TRUE} (default), transform \code{d2} ideal points to map them on \code{d1} space.
+#' If \code{FALSE}, transform \code{d1} ideal points to map them on \code{d2} space.
 #' @param tr.opt Used if \code{bridge.method} is a transformation method (i.e., \code{"procrustes"}, \code{"homography"}, or \code{"olsmap"}). 
 #' If \code{TRUE}, conduct optimization of transformation through RANSAC
 #' (random sample consensus). The default is \code{FALSE}.
@@ -147,8 +165,7 @@
 #' @author Tzu-Ping Liu \email{jamesliu0222@@gmail.com}, Gento Kato \email{gento.badger@@gmail.com}, and Sam Fuller \email{sjfuller@@ucdavis.edu}.
 #' 
 #' @seealso \code{\link{ipest}}, \code{\link{setanchors}}, 
-#' \code{\link{bridge.procrustes}}, \code{\link{bridge.homography}}, 
-#' \code{\link{bridge.olsmap}},
+#' \code{\link{bridge.linearmap}},
 #' \code{\link{oocflex}}, \code{\link[oc]{oc}}, \code{\link[basicspace]{blackbox}},
 #' \code{\link[wnominate]{wnominate}}, \code{\link[pscl]{ideal}}
 #' 
@@ -169,7 +186,7 @@
 #' 
 #' @export
 
-ipbridging <- function(d1, d2, 
+ipbridging <- function(d1=NULL, d2=NULL, 
                        bridge.method = "procrustes", 
                        anchors.method = "subsample",
                        anchors.subsample.method = "random",
@@ -178,12 +195,14 @@ ipbridging <- function(d1, d2,
                        anchors.subsample.wgt.d2 = NULL,
                        anchors.selectrows.d1 = 1:100,
                        anchors.selectrows.d2 = 1:100,
+                       anchors.selectrows.data = NULL,
                        anchors.newdata = NULL,
                        input.type="responses",
                        ip.method="ooc", 
                        ip.dims=2,
                        ip.polarity.d1 = c(1,1),
                        ip.polarity.d2 = c(1,1),
+                       tr.trans.d2 = TRUE,
                        tr.opt = FALSE,
                        tr.opt.iter.n = 10000,
                        tr.opt.sample.n = 30,
@@ -193,60 +212,148 @@ ipbridging <- function(d1, d2,
                        tr.blend.th2 = 0.15,
                        ...) {
   
-  ## Check Inputs
-  if (is.vector(d1)) {
-    warning("d1 is a vector. Converted to matrix with one column.")
-    d1 <- as.matrix(d1, ncol=1)
+  #########################
+  ## STEP 1: CHECK INPUT ##
+  #########################
+  
+  ## If anchors.method is anchors.out object, d1 and d2 can be NULL.
+  if (class(anchors.method)[1]=="anchors.out") {
+    if (!is.null(d1)) {
+      if ((class(d1)[1]!="ipest.out") & input.type=="responses") {
+        warning("d1 & d2 are replaced by the dataset contained in anchors.method.")
+        d1 <- anchors.method$d.ip1
+        d2 <- anchors.method$d.ip1
+      } else {
+        if(is.null(d2)) stop("d2 cannot stay NULL.")
+      }
+    } else if (!is.null(d2)) {
+      if (class(d2)[1]!="ipest.out" & input.type=="responses") {
+        warning("d1 & d2 are replaced by the dataset contained in anchors.method.")
+        d1 <- anchors.method$d.ip1
+        d2 <- anchors.method$d.ip1
+      } else {
+        stop("d1 cannot stay NULL.")
+      }
+    }
+  } else {
+    if(is.null(d1)) stop("d1 cannot stay NULL unless class(anchors.method)[1]=='anchors.out'.")
+    if(is.null(d2)) stop("d2 cannot stay NULL unless class(anchors.method)[1]=='anchors.out'.")
   }
-  if (is.vector(d2)) {
-    warning("d2 is a vector. Converted to matrix with one column.")
-    d2 <- as.matrix(d2, ncol=1)
-  }
-  if (!is.matrix(d1)&!is.data.frame(d1)) stop("d1 must be matrix or data.frame!") 
-  if (!is.matrix(d2)&!is.data.frame(d2)) stop("d2 must be matrix or data.frame!") 
-  if (is.data.frame(d1)) d1 <- as.matrix(d1)
-  if (is.data.frame(d2)) d2 <- as.matrix(d2)
   
-  # Respondents Data
-  respdt <- data.frame(allid = seq(1,nrow(d1)+nrow(d2)),
-                       subid = c(seq(1,nrow(d1)),seq(1,nrow(d2))),
-                       data = c(rep(1, nrow(d1)), rep(2, nrow(d2))),
-                       isanchor = 0)
+  ## If both d1 and d2 are ipest.out objects, ip... arguments are replaced.
+  if (class(d2)[1]=="ipest.out") {
+    if (class(d1)[1]!="ipest.out") stop("If class(d2)=='ipest.out', class(d1) must be 'ipest.out'.")
+  } 
+  if (class(d1)[1]=="ipest.out") {
+    
+    if (class(d2)[1]!="ipest.out") stop("If class(d1)=='ipest.out', class(d2) must be 'ipest.out'.")
+    
+    ## Update Arguments ##
+    input.type="idealpoints"
+    
+    if (d1$method!=d2$method) stop("ip.method must be the same between d1 and d2.")
+    ip.method = d1$method
+    
+    if (d1$dims!=d2$dims) stop("ip.dims must be the same between d1 and d2.")
+    ip.dims = d1$dims
+    
+    ip.polarity.d1 = d1$polarity
+    ip.polarity.d2 = d2$polarity
+    
+    ## Update Input Data ##
+    ip1_f <- d1$model
+    ip2_f <- d2$model
+    d1 <- d1$ip
+    d2 <- d2$ip
   
-  cat(paste0("\nBridging ideal points through ", bridge.method," method:\n\n"))
-  
-  ## Joint scaling As a Bridging Method
-  if (bridge.method=="joint") {
-
+  ## If input.type is "idealpoints" (and d1&d2 are NOT ipest.out object),
+  ## ip... arguments are set differently.
+  } else if (input.type=="idealpoints") {
+    
     if (ncol(d1)!=ncol(d2)) stop("d1 and d2 must have the same number of columns!")
     
+    # Update ip relevant parameters
+    ip.method <- ip1_f <- ip2_f <- NULL
+    ip.dims <- ncol(d1)
+  
+  ## All else, check if d1 and d2 are matrix objects.    
+  } else {
+    
+    if (is.vector(d1)) {
+      warning("d1 is a vector. Converted to matrix with one column.")
+      d1 <- as.matrix(d1, ncol=1)
+    }
+    
+    if (is.vector(d2)) {
+      warning("d2 is a vector. Converted to matrix with one column.")
+      d2 <- as.matrix(d2, ncol=1)
+    }
+    
+    if (!is.matrix(d1)&!is.data.frame(d1)) stop("d1 must be matrix or data.frame!") 
+    if (!is.matrix(d2)&!is.data.frame(d2)) stop("d2 must be matrix or data.frame!") 
+    if (is.data.frame(d1)) d1 <- as.matrix(d1)
+    if (is.data.frame(d2)) d2 <- as.matrix(d2)
+
+  } 
+  
+  ######################
+  ## STEP 2: BRIDGING ##
+  ######################
+  
+  ## Begin Bridging
+  cat(paste0("\nBridging ideal points through ", bridge.method," method:\n\n"))
+  
+  #############################################
+  ## 2A: Joint Scaling As a Bridging Method  ##
+  #############################################
+  if (bridge.method=="joint") {
+    
+    #######################
+    ## 2A-1: Check input ##
+    #######################
     if (input.type=="idealpoints") {
       
       stop('input.type=="idealpoints" is incompatible with bridge.method=="joint"!')
       
     } else if (input.type=="responses") {
       
-      cat("Generating bridged ideal points...\n")
-      
-      # Anchor Identifier (NA in joint)
-      respdt$isanchor <- NA
-      
-      # Estimate Ideal Points
-      ip_joint_est <- ipest(rbind(d1,d2), method=ip.method, 
-                            dims=ip.dims, polarity=ip.polarity.d1, ...)
-      ip_joint_f <- ip_joint_est$ip_f
-      ip_joint <- ip_joint_est$ip
-      
+      if (ncol(d1)!=ncol(d2)) stop("d1 and d2 must have the same number of columns!")
+
     } else {
       
       stop("Invalid 'input.type' value!")
       
     }
     
+    ###########################################
+    ## 2A-2: Jointly estimating ideal points ##
+    ###########################################
+    cat("Generating bridged ideal points...\n")
+    
+    # Estimate Ideal Points
+    ip_joint_est <- ipest(rbind(d1,d2), method=ip.method, 
+                          dims=ip.dims, polarity=ip.polarity.d1, ...)
+    ip_joint_f <- ip_joint_est$model
+    ip_joint <- ip_joint_est$ip
+    
+    ############################
+    ## 2A-3: Organize outputs ## 
+    ############################
+    # Respondents Data
+    respdt <- data.frame(allid = seq(1,nrow(d1)+nrow(d2)),
+                         subid = c(seq(1,nrow(d1)),seq(1,nrow(d2))),
+                         data = c(rep(1, nrow(d1)), rep(2, nrow(d2))),
+                         isanchor = 0)
+    
+    # Anchor Identifier (NA in joint)
+    respdt$isanchor <- NA
+    
     ## Add IP values to respdt
-    for(i in 1:ncol(ip_joint)) respdt[,paste0("bridged",i,"D")] <- ip_joint[,i]
-    for(i in 1:ncol(ip_joint)) respdt[,paste0("ip1_coord",i,"D")] <- NA
-    for(i in 1:ncol(ip_joint)) respdt[,paste0("ip2_coord",i,"D")] <- NA
+    for(i in 1:ncol(ip_joint)) respdt[,paste0("bridged_",i,"D")] <- ip_joint[,i]
+    for(i in 1:ncol(ip_joint)) respdt[,paste0("ip1_",i,"D")] <- NA
+    for(i in 1:ncol(ip_joint)) respdt[,paste0("ip2_",i,"D")] <- NA
+    for(i in 1:ncol(ip_joint)) respdt[,paste0("ip1_trans_",i,"D")] <- NA
+    for(i in 1:ncol(ip_joint)) respdt[,paste0("ip2_trans_",i,"D")] <- NA
     
     cat("DONE!\n\n")
     
@@ -261,72 +368,117 @@ ipbridging <- function(d1, d2,
                 input.type = input.type,
                 anchors.method = NULL)
     return(out)
-    
-  ## All Other Bridging Methods using Linear Mapping with Anchors    
+  
+  #############################################
+  ## 2B: Linear Mapping As a Bridging Method ##
+  #############################################
   } else if (bridge.method%in%c("procrustes","homography","olsmap")) {
     
-    ## Generate Ideal Point Estimates from Two Separate Data Sets
+    
+    ################################################
+    ## 2B-1: Create/Extract Datasets with Anchors ## 
+    ################################################
+    
+    ################################################################
+    ## 2B-1A If inputs are already ideal points (only extraction) ##
+    ################################################################
     if (input.type=="idealpoints") {
-      
-      if (ncol(d1)!=ncol(d2)) stop("d1 and d2 must have the same number of columns!")
-      
-      # Input is already ideal points
-      ip1 <- d1
-      ip2 <- d2
-      
-      # Update ip relevant parameters
-      ip.method <- ip1_f <- ip2_f <- NULL
-      ip.dims <- ncol(ip1)
-      
-      # Setting Anchors
-      cat("Setting anchors...\n\n")
-      if (anchors.method!="selectrows") {
+
+      # Extract anchors using pre-defined anchors.out object.
+      if (class(anchors.method)[1]=="anchors.out") {
         
-        warning("anchors.method must be 'selectrows' for input.type=='idealpoints'. Changed anchors.method to 'selectrows'.")
-        anchors.method = "selectrows"
+        # Convert Object Names
+        outac <- anchors.method
+        ip1 <- d1
+        ip2 <- d2
         
-      }
-      if (anchors.method=="selectrows") {
+        # Update anchors.method
+        anchors.method = outac$anchors.method
         
-        if (length(anchors.selectrows.d1)!=length(anchors.selectrows.d2)) {
-          stop("anchors.selectrows.d1 and anchors.selectrows.d2 must have the same length!")
+      # Extract anchors using anchors.selectrows.d1.
+      } else {
+        
+        if (anchors.method!="selectrows") {
+          
+          warning("anchors.method must be 'selectrows' for input.type=='idealpoints'. Changed anchors.method to 'selectrows'.")
+          anchors.method = "selectrows"
+          
         }
-        
-        # Anchor Ideal Points
-        anchorrows.ip1 <- anchors.selectrows.d1
-        anchorrows.ip2 <- anchors.selectrows.d2
+        if (anchors.method=="selectrows") {
+          
+          if (length(anchors.selectrows.d1)!=length(anchors.selectrows.d2)) {
+            stop("anchors.selectrows.d1 and anchors.selectrows.d2 must have the same length!")
+          }
+          
+          # Set Anchors
+          outac <- setanchors(d1, d2,
+                              anchors.method=anchors.method,# = "subsample",
+                              anchors.selectrows.d1 = anchors.selectrows.d1,# = 1:100,
+                              anchors.selectrows.d2 = anchors.selectrows.d2,# = 1:100,
+                              anchors.selectrows.data = anchors.selectrows.data)
+          ip1 <- outac$d.ip1
+          ip2 <- outac$d.ip2
+
+        }
 
       }
       
-      
-    } else if (input.type=="responses") {
-      
-      outac <- setanchors(d1, d2,
-                          anchors.method,# = "subsample",
-                          anchors.subsample.method,# = "random",
-                          anchors.subsample.pr,# = 0.1,
-                          anchors.subsample.wgt.d1,# = NULL,
-                          anchors.subsample.wgt.d2,# = NULL,
-                          anchors.selectrows.d1,# = 1:100,
-                          anchors.selectrows.d2,# = 1:100,
-                          anchors.newdata)# = NULL)
-      d1x <- outac$d1x
-      d2x <- outac$d2x
-      respdt <- outac$respdt
+      # Extract Required Data
+      respdt <- outac$bridge.data
       anchorrows.ip1 <- outac$anchorrows.ip1
       anchorrows.ip2 <- outac$anchorrows.ip2
+      anchorrows.ip1.data <- outac$anchorrows.ip1.data
+      anchorrows.ip2.data <- outac$anchorrows.ip2.data
+
+    ############################################################
+    ## 2B-1B If inputs are responses (Extraction or Creation) ##
+    ############################################################
+    } else if (input.type=="responses") {
       
-      ## Compute Ideal Points
+      # Extract Anchors using pre-defined anchors.out object.
+      if (class(anchors.method)[1]=="anchors.out") {
+        
+        outac <- anchors.method
+        
+        # Update anchors.method
+        anchors.method = outac$anchors.method
+      
+      # Newly select anchors and create new datasets  
+      } else {
+        
+        cat("Setting anchors...\n\n")
+        outac <- setanchors(d1, d2,
+                            anchors.method,# = "subsample",
+                            anchors.subsample.method,# = "random",
+                            anchors.subsample.pr,# = 0.1,
+                            anchors.subsample.wgt.d1,# = NULL,
+                            anchors.subsample.wgt.d2,# = NULL,
+                            anchors.selectrows.d1,# = 1:100,
+                            anchors.selectrows.d2,# = 1:100,
+                            anchors.selectrows.data, # = NULL,
+                            anchors.newdata)# = NULL)
+
+      }
+      
+      respdt <- outac$bridge.data
+      anchorrows.ip1 <- outac$anchorrows.ip1
+      anchorrows.ip2 <- outac$anchorrows.ip2
+      anchorrows.ip1.data <- outac$anchorrows.ip1.data
+      anchorrows.ip2.data <- outac$anchorrows.ip2.data
+      
+    ####################################################################
+    ## 2B-3: Compute ideal points (only when input.type=="responses") ##  
+    ####################################################################
       cat("Generating ideal points on subsets...\n")
-      # Ideal Point 1
-      ip1_est <- ipest(d1x, method=ip.method, 
+      # Ideal Point for Dataset 1
+      ip1_est <- ipest(outac$d.ip1, method=ip.method, 
                             dims=ip.dims, polarity=ip.polarity.d1, ...)
-      ip1_f <- ip1_est$ip_f
+      ip1_f <- ip1_est$model
       ip1 <- ip1_est$ip
-      # Ideal Point 2
-      ip2_est <- ipest(d2x, method=ip.method, 
+      # Ideal Point for Dataset 2
+      ip2_est <- ipest(outac$d.ip2, method=ip.method, 
                        dims=ip.dims, polarity=ip.polarity.d2, ...)
-      ip2_f <- ip2_est$ip_f
+      ip2_f <- ip2_est$model
       ip2 <- ip2_est$ip
       
     } else {
@@ -335,89 +487,82 @@ ipbridging <- function(d1, d2,
       
     } 
     
-    #############
-    ## Mapping ##
-    #############
-    
-    ## Homography Transformation Method
-    cat("\nMapping d2 ideal points on d1 ideal points space...\n\n")
-    if (bridge.method=="procrustes") {
-      
-      bridge.model <- bridge.procrustes(ip1=ip1,
-                                        ip2=ip2,
-                                        anchorrows.ip1=anchorrows.ip1,
-                                        anchorrows.ip2=anchorrows.ip2, 
-                                        opt = tr.opt,
-                                        opt.iter.n = tr.opt.iter.n,
-                                        opt.sample.n = tr.opt.sample.n,
-                                        opt.th.inline = tr.opt.th.inline,
-                                        blend = tr.blend,
-                                        blend.th1 = tr.blend.th1, 
-                                        blend.th2 = tr.blend.th2)
-      ip2_trans <- bridge.model$ip2_trans
-      
-    }
-    if (bridge.method=="homography") {
-      
-      bridge.model <- bridge.homography(ip1=ip1,
-                                        ip2=ip2,
-                                        anchorrows.ip1=anchorrows.ip1,
-                                        anchorrows.ip2=anchorrows.ip2, 
-                                        opt = tr.opt,
-                                        opt.iter.n = tr.opt.iter.n,
-                                        opt.sample.n = tr.opt.sample.n,
-                                        opt.th.inline = tr.opt.th.inline,
-                                        blend = tr.blend,
-                                        blend.th1 = tr.blend.th1, 
-                                        blend.th2 = tr.blend.th2)
-      ip2_trans <- bridge.model$ip2_trans
-      
-    }
-    if (bridge.method=="olsmap") {
-      
-      bridge.model <- bridge.olsmap(ip1=ip1,
-                                        ip2=ip2,
-                                        anchorrows.ip1=anchorrows.ip1,
-                                        anchorrows.ip2=anchorrows.ip2, 
-                                        opt = tr.opt,
-                                        opt.iter.n = tr.opt.iter.n,
-                                        opt.sample.n = tr.opt.sample.n,
-                                        opt.th.inline = tr.opt.th.inline,
-                                        blend = tr.blend,
-                                        blend.th1 = tr.blend.th1, 
-                                        blend.th2 = tr.blend.th2)
-      ip2_trans <- bridge.model$ip2_trans
-      
+    ##########################
+    ## 2B-4: Linear mapping ##
+    ##########################
+    if (tr.trans.d2) {
+      cat("\nMapping d2 ideal points on d1 ideal points space...\n\n")
+    } else {
+      cat("\nMapping d1 ideal points on d2 ideal points space...\n\n")
     }
     
-    # Update respdt for anchor rows
-    respdt$isanchor[anchorrows.ip1[which(anchorrows.ip1 <= nrow(d1))]] <- 1
-    respdt$isanchor[anchorrows.ip2[which(anchorrows.ip2 <= nrow(d2))]+nrow(d1)] <- 1
+    bridge.model <- bridge.linearmap(ip1=ip1,
+                                     ip2=ip2,
+                                     anchorrows.ip1=anchorrows.ip1,
+                                     anchorrows.ip2=anchorrows.ip2, 
+                                     method = bridge.method,
+                                     trans.ip2 = tr.trans.d2,
+                                     opt = tr.opt,
+                                     opt.iter.n = tr.opt.iter.n,
+                                     opt.sample.n = tr.opt.sample.n,
+                                     opt.th.inline = tr.opt.th.inline,
+                                     blend = tr.blend,
+                                     blend.th1 = tr.blend.th1, 
+                                     blend.th2 = tr.blend.th2)
+    
+    # Transformed Ideal Points
+    if (tr.trans.d2) {
+      ip2_trans <- bridge.model$ip2_trans
+    } else {
+      ip1_trans <- bridge.model$ip1_trans
+    }
+
+    ############################
+    ## 2B-5: Organize outputs ## 
+    ############################
+    # Storage
+    for (i in 1:ncol(ip1)) respdt[,paste0("bridged_",i,"D")] <- NA
+    for (i in 1:ncol(ip1)) respdt[,paste0("ip1_",i,"D")] <- NA
+    for (i in 1:ncol(ip1)) respdt[,paste0("ip2_",i,"D")] <- NA
+    for(i in 1:ncol(ip1)) respdt[,paste0("ip1_trans_",i,"D")] <- NA
+    for(i in 1:ncol(ip1)) respdt[,paste0("ip2_trans_",i,"D")] <- NA
 
     ## Add IP values to respdt
-    for(i in 1:ncol(ip1)) respdt[,paste0("bridged",i,"D")] <- NA
-    for(i in 1:ncol(ip1)) respdt[,paste0("ip1_coord",i,"D")] <- NA
-    for(i in 1:ncol(ip1)) respdt[,paste0("ip2_coord",i,"D")] <- NA
-    if (anchors.method=="selectrows") {
+    for (i in 1:ncol(ip1)) {
       
-      for(i in 1:ncol(ip1)) respdt[,paste0("bridged",i,"D")][which(respdt$data==2)] <- ip2_trans[,i]
-      for(i in 1:ncol(ip1)) respdt[,paste0("bridged",i,"D")][which(respdt$data==1)] <- ip1[,i]
-      for(i in 1:ncol(ip1)) respdt[,paste0("ip1_coord",i,"D")][which(respdt$data==1)] <- ip1[,i]
-      for(i in 1:ncol(ip1)) respdt[,paste0("ip2_coord",i,"D")][which(respdt$data==2)] <- ip2[,i]
-      # If anchors.method=="selectrows", anchors are duplicated in d2. 
-      # Therefore bridged ideal points of anchors in d2 are replaced with NA.
-      for(i in 1:ncol(ip1)) respdt[,paste0("bridged",i,"D")][which(respdt$data==2 & respdt$isanchor==1)] <- NA
+      # Assignment
+      respdt[,paste0("ip1_",i,"D")][which(respdt$data==1|respdt$isanchor==1)] <- 
+        ip1[,i]
+      respdt[,paste0("ip2_",i,"D")][which(respdt$data==2)] <- 
+        ip2[,i][which(!seq(1,nrow(ip2)) %in% anchorrows.ip2[which(anchorrows.ip2.data!=2)])]
+      respdt[,paste0("ip2_",i,"D")][which(respdt$data!=2 & respdt$isanchor==1)] <- 
+        ip2[,i][which(seq(1,nrow(ip2)) %in% anchorrows.ip2[which(anchorrows.ip2.data!=2)])]
       
-    } else {
-      
-      for(i in 1:ncol(ip1)) respdt[,paste0("bridged",i,"D")][which(respdt$data==2|respdt$isanchor==1)] <- ip2_trans[,i]
-      for(i in 1:ncol(ip1)) respdt[,paste0("bridged",i,"D")][which(respdt$data==1|respdt$isanchor==1)] <- ip1[,i]
-      for(i in 1:ncol(ip1)) respdt[,paste0("ip1_coord",i,"D")][which(respdt$data==1|respdt$isanchor==1)] <- ip1[,i]
-      for(i in 1:ncol(ip1)) respdt[,paste0("ip2_coord",i,"D")][which(respdt$data==2|respdt$isanchor==1)] <- ip2[,i]
-      
-    }
+      if (tr.trans.d2) {
+        
+        respdt[,paste0("ip2_trans_",i,"D")][which(respdt$data==2)] <- 
+          ip2_trans[,i][which(!seq(1,nrow(ip2)) %in% anchorrows.ip2[which(anchorrows.ip2.data!=2)])]
+        respdt[,paste0("ip2_trans_",i,"D")][which(respdt$data!=2 & respdt$isanchor==1)] <- 
+          ip2_trans[,i][which(seq(1,nrow(ip2)) %in% anchorrows.ip2[which(anchorrows.ip2.data!=2)])]
+        respdt[,paste0("bridged_",i,"D")][which(respdt$data==1)] <- 
+          respdt[,paste0("ip1_",i,"D")][which(respdt$data==1)]
+        respdt[,paste0("bridged_",i,"D")][which(respdt$data!=1)] <- 
+          respdt[,paste0("ip2_trans_",i,"D")][which(respdt$data!=1)]
 
+      } else {
+        
+        respdt[,paste0("ip1_trans_",i,"D")][which(respdt$data==1|respdt$isanchor==1)] <- 
+          ip1_trans[,i]
+        respdt[,paste0("bridged_",i,"D")][which(respdt$data==2)] <- 
+          respdt[,paste0("ip2_",i,"D")][which(respdt$data==2)]
+        respdt[,paste0("bridged_",i,"D")][which(respdt$data!=2)] <- 
+          respdt[,paste0("ip1_trans_",i,"D")][which(respdt$data!=2)]
+
+      }
+
+    }
     cat("DONE!\n\n")
+    
     ## Compile Output
     out <- list(bridge.data = respdt, 
                 bridge.model = bridge.model,
@@ -427,24 +572,45 @@ ipbridging <- function(d1, d2,
                 ip.method = ip.method,
                 ip.dims = ip.dims,
                 input.type = input.type,
-                anchors.method = anchors.method)
+                anchors.method = anchors.method,
+                anchors.out = outac)
     return(out)
   
-  # Mapping using Model Prediction from Only One Group (Only Bayesian IRT)        
+  ###################################################################
+  ## 2C: Model Prediction Based on 1st Dataset (Only Bayesian IRT) ##
+  ###################################################################
   } else if (bridge.method=="modelmap") {
     
+    #######################
+    ## 2C-1: Check input ##
+    #######################
     if (input.type=="idealpoints"|ip.method!="irtMCMC") {
       stop("To use bridge.method='modelmap', input.type must be 'responses' and ip.method must be 'irtMCMC'!")
     }
     
+    ################################
+    ## 2C-2: Estimation & mapping ##
+    ################################
     ip_mmap_f <- ideal(rollcall(rbind(d1,d2)), d=ip.dims, 
                        use.voter=c(rep(TRUE,nrow(d1)),rep(FALSE,nrow(d2))), ...)
     ip_mmap <- ip_mmap_f$xbar
     
+    
+    ############################
+    ## 2C-3: Organize outputs ## 
+    ############################
+    # Respondents Data
+    respdt <- data.frame(allid = seq(1,nrow(d1)+nrow(d2)),
+                         subid = c(seq(1,nrow(d1)),seq(1,nrow(d2))),
+                         data = c(rep(1, nrow(d1)), rep(2, nrow(d2))),
+                         isanchor = NA)
+    
     ## Add IP values to respdt
-    for(i in 1:ncol(ip_mmap)) respdt[,paste0("bridged",i,"D")] <- ip_mmap[,i]
-    for(i in 1:ncol(ip_mmap)) respdt[,paste0("ip1_coord",i,"D")] <- NA
-    for(i in 1:ncol(ip_mmap)) respdt[,paste0("ip2_coord",i,"D")] <- NA
+    for(i in 1:ncol(ip_mmap)) respdt[,paste0("bridged_",i,"D")] <- ip_mmap[,i]
+    for(i in 1:ncol(ip_mmap)) respdt[,paste0("ip1_",i,"D")] <- NA
+    for(i in 1:ncol(ip_mmap)) respdt[,paste0("ip2_",i,"D")] <- NA
+    for(i in 1:ncol(ip_mmap)) respdt[,paste0("ip1_trans_",i,"D")] <- NA
+    for(i in 1:ncol(ip_mmap)) respdt[,paste0("ip2_trans_",i,"D")] <- NA
     
     cat("DONE!\n\n")
     
@@ -460,8 +626,14 @@ ipbridging <- function(d1, d2,
                 anchors.method = NULL)
     return(out)
 
+  #############################################################
+  ## 2D: Pooling Dataset Using Anchors As a Bridging Method  ##
+  #############################################################
   } else if (bridge.method=="anchoredpooling") {
     
+    #######################
+    ## 2D-1: Check input ##
+    #######################
     if (ncol(d1)!=ncol(d2)) stop("d1 and d2 must have the same number of columns!")
     
     if (input.type=="idealpoints") {
@@ -475,47 +647,60 @@ ipbridging <- function(d1, d2,
       if (length(anchors.selectrows.d1)!=length(anchors.selectrows.d2)) {
         stop("anchors.selectrows.d1 and anchors.selectrows.d2 must have the same length!")
       }
-      
-      # Update respdt
-      respdt$isanchor[anchors.selectrows.d1] <- 1
-      respdt$isanchor[anchors.selectrows.d2+nrow(d1)] <- 1
-      
-      ## Dataset for Ideal Point Computation
-      d1x <- cbind(d1[-anchors.selectrows.d1,], 
-                   matrix(NA,ncol=ncol(d2),nrow=nrow(d1[-anchors.selectrows.d1,])))
-      d2x <- cbind(matrix(NA,ncol=ncol(d1),nrow=nrow(d2[-anchors.selectrows.d2,])),
-                   d2[-anchors.selectrows.d2,])
-      dx <- rbind(d1x,d2x,cbind(d1[anchors.selectrows.d1,],
-                                d2[anchors.selectrows.d2,]))
 
-      cat("Generating bridged ideal points...\n")
-      
-      # Anchor Identifier (NA in joint)
-      respdt$isanchor <- NA
-      
-      # Estimate Ideal Points
-      ip_pooled_est <- ipest(dx, method=ip.method, 
-                            dims=ip.dims, polarity=ip.polarity.d1, ...)
-      ip_pooled_f <- ip_pooled_est$ip_f
-      ip_pooled <- ip_pooled_est$ip
-      
     } else {
       
       stop("Invalid 'input.type' value!")
       
     }
     
+    #########################################
+    ## 2D-2: Combine dataset using anchors ## 
+    #########################################
+    d1x <- cbind(d1[-anchors.selectrows.d1,], 
+                 matrix(NA,ncol=ncol(d2),nrow=nrow(d1[-anchors.selectrows.d1,])))
+    d2x <- cbind(matrix(NA,ncol=ncol(d1),nrow=nrow(d2[-anchors.selectrows.d2,])),
+                 d2[-anchors.selectrows.d2,])
+    dx <- rbind(d1x,d2x,cbind(d1[anchors.selectrows.d1,],
+                              d2[anchors.selectrows.d2,]))
+    
+    ################################
+    ## 2D-3: Compute ideal points ##
+    ################################
+    cat("Generating bridged ideal points...\n")
+    
+    # Estimate Ideal Points
+    ip_pooled_est <- ipest(dx, method=ip.method, 
+                           dims=ip.dims, polarity=ip.polarity.d1, ...)
+    ip_pooled_f <- ip_pooled_est$model
+    ip_pooled <- ip_pooled_est$ip
+    
+    ############################
+    ## 2D-4: Organize outputs ## 
+    ############################
+    # Respondents Data
+    respdt <- data.frame(allid = seq(1,nrow(d1)+nrow(d2)),
+                         subid = c(seq(1,nrow(d1)),seq(1,nrow(d2))),
+                         data = c(rep(1, nrow(d1)), rep(2, nrow(d2))),
+                         isanchor = 0)
+    
+    # Update anchor identifier
+    respdt$isanchor[anchors.selectrows.d1] <- 1
+    respdt$isanchor[anchors.selectrows.d2+nrow(d1)] <- 1
+    
     ## Add IP values to respdt
     acrows <- c(anchors.selectrows.d1,anchors.selectrows.d2+nrow(d1))
     for(i in 1:ncol(ip_pooled)) {
-      respdt[,paste0("bridged",i,"D")] <- NA
-      respdt[-acrows,paste0("bridged",i,"D")] <- 
+      respdt[,paste0("bridged_",i,"D")] <- NA
+      respdt[-acrows,paste0("bridged_",i,"D")] <- 
         ip_pooled[seq(1,nrow(d1x)+nrow(d2x)),i]
-      respdt[anchors.selectrows.d1,paste0("bridged",i,"D")] <- 
+      respdt[anchors.selectrows.d1,paste0("bridged_",i,"D")] <- 
         ip_pooled[-seq(1,nrow(d1x)+nrow(d2x)),i]
     }
-    for(i in 1:ncol(ip_pooled)) respdt[,paste0("ip1_coord",i,"D")] <- NA
-    for(i in 1:ncol(ip_pooled)) respdt[,paste0("ip2_coord",i,"D")] <- NA
+    for(i in 1:ncol(ip_pooled)) respdt[,paste0("ip1_",i,"D")] <- NA
+    for(i in 1:ncol(ip_pooled)) respdt[,paste0("ip2_",i,"D")] <- NA
+    for(i in 1:ncol(ip_pooled)) respdt[,paste0("ip1_trans_",i,"D")] <- NA
+    for(i in 1:ncol(ip_pooled)) respdt[,paste0("ip2_trans_",i,"D")] <- NA
     
     cat("DONE!\n\n")
     
@@ -529,6 +714,7 @@ ipbridging <- function(d1, d2,
                 ip.dims = ip.dims,
                 input.type = input.type,
                 anchors.method = "selectrows")
+    
     return(out)
     
   } else {
@@ -536,7 +722,5 @@ ipbridging <- function(d1, d2,
     stop("Invalid 'bridge.method' value!")
     
   }
-  
-  
-  
+
 }

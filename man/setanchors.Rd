@@ -14,6 +14,7 @@ setanchors(
   anchors.subsample.wgt.d2 = NULL,
   anchors.selectrows.d1 = 1:100,
   anchors.selectrows.d2 = 1:100,
+  anchors.selectrows.data = NULL,
   anchors.newdata = NULL
 )
 }
@@ -86,17 +87,24 @@ the above condition is not required.}
 \item{anchors.selectrows.d2}{Must be the vector of positive integers.
 Specify the row numbers of anchors in \code{d2}.}
 
+\item{anchors.selectrows.data}{Required if \code{anchors.method=="selectrows"}. 
+Specify the dataset where anchors are originally found. 
+Must be the same length as \code{anchors.selectrows.d1}. Allowed values are 1 (=\code{d1}), 
+2 (=\code{d2}) and 3 (=new data).}
+
 \item{anchors.newdata}{Matrix or data.frame of anchors. Must have identical 
 columns as \code{d1} and \code{d2}. Used if \code{anchors.method=="newdata"}.}
 }
 \value{
 A list with the following elements:
 \itemize{
-  \item \code{d1x}: \code{d1} with anchors.
-  \item \code{d1x}: \code{d1} with anchors.
-  \item \code{respdt}: data.frame to store the ideal point estimates (empty for now).
-  \item \code{anchorrows.ip1}: Anchor locations in \code{d1x}.
-  \item \code{anchorrows.ip2}: Anchor locations in \code{d2x}.
+  \item \code{bridge.data}: data.frame to store the ideal point estimates in the next method.
+  \item \code{d.ip1}: \code{d1} with anchors.
+  \item \code{d.ip2}: \code{d2} with anchors.
+  \item \code{anchorrows.ip1}: Anchor locations in \code{d.ip1}.
+  \item \code{anchorrows.ip2}: Anchor locations in \code{d.ip2}.
+  \item \code{anchorrows.ip1.data}: Original dataset for anchors identified in \code{anchorrows.ip1}.
+  \item \code{anchorrows.ip2.data}: Original dataset for anchors identified in \code{anchorrows.ip2}.
 }
 }
 \description{

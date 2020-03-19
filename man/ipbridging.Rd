@@ -5,8 +5,8 @@
 \title{Bridging Ideal Point Estimates from Two Data Sets}
 \usage{
 ipbridging(
-  d1,
-  d2,
+  d1 = NULL,
+  d2 = NULL,
   bridge.method = "procrustes",
   anchors.method = "subsample",
   anchors.subsample.method = "random",
@@ -15,12 +15,14 @@ ipbridging(
   anchors.subsample.wgt.d2 = NULL,
   anchors.selectrows.d1 = 1:100,
   anchors.selectrows.d2 = 1:100,
+  anchors.selectrows.data = NULL,
   anchors.newdata = NULL,
   input.type = "responses",
   ip.method = "ooc",
   ip.dims = 2,
   ip.polarity.d1 = c(1, 1),
   ip.polarity.d2 = c(1, 1),
+  tr.trans.d2 = TRUE,
   tr.opt = FALSE,
   tr.opt.iter.n = 10000,
   tr.opt.sample.n = 30,
@@ -32,24 +34,30 @@ ipbridging(
 )
 }
 \arguments{
-\item{d1}{Matrix or data.frame of 'reference' responses.
-(i.e., In mapping methods, ideal points based on \code{d2} will be 
-transformed and mapped to ideal point space based on \code{d1}).
-Rows are resepondents and columns are questions/issues. 
-Alternatively, if \code{input.type=="idealpoints"}, one can directly 
-set matrix or data.frame of ideal points (rows are respondents and 
-columns are ideal point dimensions).}
+\item{d1}{First dataset that contains some policy preferences. 
+Must be one of following types:
+\itemize{
+  \item If \code{input.type=="responses"}, matrix or data.frame of responses. 
+  Rows are resepondents and columns are questions/issues.
+  \item If \code{input.type=="idealpoints"}, matrix or data.frame of ideal points.
+  Rows are respondents and columns are ideal point dimensions.
+  \item If ideal points are estimated by \code{\link{ipest}} function, 
+  one can assign \code{ipest.out} object directly to here. 
+  \item If anchored data is created using \code{\link{setanchors}} function, 
+  one can leave \code{d1==NULL} and set \code{anchors.out} object to 
+  \code{anchor.method} argument. 
+}}
 
-\item{d2}{Matrix or data.frame of responses (or ideal points) to be transformed.}
+\item{d2}{Second dataset that contains some policy preferences. Must be the same class of object as \code{d1}.}
 
 \item{bridge.method}{Method of bridging. Currently, following methods are aviailable:
 \itemize{
   \item \code{"procrustes"} (default): Procrustes transformation method. 
   Based on anchor cases, this method provides restricted non-parametric procedure to 
-  find optimal transformation matrix to bridge ideal point estimates (calls \code{\link{bridge.homography}}).
+  find optimal transformation matrix to bridge ideal point estimates.
   \item \code{"homography"}: Homography transformation method. 
   Based on anchor cases, this method provides non-parametric procedure to 
-  find optimal transformation matrix to bridge ideal point estimates (calls \code{\link{bridge.homography}}).
+  find optimal transformation matrix to bridge ideal point estimates.
   \item \code{"joint"}: Joint scaling method. Simple method to combine \code{d1} and 
   \code{d2} and jointly compute ideal points. The procedure described in Jessee (2016).
   \item \code{"modelmap"}: Use the model estimated on \code{d1} to map
@@ -57,7 +65,7 @@ columns are ideal point dimensions).}
   anchor cases. Can be used only if \code{input.type=="responses"} and 
   \code{ip.method=="irtMCMC"}. See Jessee (2016).
   \item \code{"olsmap"}: OLS mapping method, Based on anchor cases, 
-  use OLs regression to map \code{d2} ideal point coordinates on 
+  use OLS regression to map \code{d2} ideal point coordinates on 
   \code{d1} ideal point space. The procedure described in Shor et al. (2010). 
   \item \code{"anchoredpooling"}: Use anchor cases to pool \code{d1} and \code{d2} 
   and jointly compute ideal points. Issues/questions in two datasets are assumed 
@@ -81,8 +89,13 @@ Ignored if \code{bridge.method} is \code{"joint"} or \code{"modelmap"}.
   selection if \code{input.type=="idealpoints"}. 
   \item \code{"newdata"} Use new dataset that only contains anchors. The data.frame
   assigned in \code{anchors.newdata} are appended to both \code{d1} and \code{d2}. 
+  \item One can also set the output from \code{\link{setanchors}} function directly to 
+  this argument. Then, if \code{d1,d2==NULL}, the ideal points are estimated using 
+  datasets contained in \code{anchors.out} object. If \code{ipest.out} objects are 
+  assigned to \code{d1,d2} or \code{input.type=="idealpoints"}, \code{anchors.out} 
+  object is used only for the bridging purpose.
 }
-Note that \code{"subsample"} and \code{"newdata"} requires \code{d1} and \code{d2}
+Note that \code{"subsample"} and \code{"newdata"} require \code{d1} and \code{d2}
 to have identical columns. This is not required for \code{"selectrows"}.}
 
 \item{anchors.subsample.method}{Method to sample anchors. Following values 
@@ -125,6 +138,11 @@ the above condition is not required.}
 \item{anchors.selectrows.d2}{Must be the vector of positive integers.
 Specify the row numbers of anchors in \code{d2}.}
 
+\item{anchors.selectrows.data}{Required if \code{anchors.method=="selectrows"}. 
+Specify the dataset where anchors are originally found. 
+Must be the same length as \code{anchors.selectrows.d1}. Allowed values are 1 (=\code{d1}), 
+2 (=\code{d2}) and 3 (=new data).}
+
 \item{anchors.newdata}{Matrix or data.frame of anchors. Must have identical 
 columns as \code{d1} and \code{d2}. Used if \code{anchors.method=="newdata"}.}
 
@@ -155,6 +173,10 @@ Used when \code{ip.method} is \code{"ooc"}, \code{"oc"}, or \code{"wnominate"}.}
 \item{ip.polarity.d2}{A vector specifying the row number of the \code{d2}'s respondent(s) 
 constrained to have a positive (i.e., right-wing or conservative) score on each dimension. 
 Used when \code{ip.method} is \code{"ooc"}, \code{"oc"}, or \code{"wnominate"}.}
+
+\item{tr.trans.d2}{Used if \code{bridge.method} is a transformation method (i.e., \code{"procrustes"}, \code{"homography"}, or \code{"olsmap"}). 
+If \code{TRUE} (default), transform \code{d2} ideal points to map them on \code{d1} space.
+If \code{FALSE}, transform \code{d1} ideal points to map them on \code{d2} space.}
 
 \item{tr.opt}{Used if \code{bridge.method} is a transformation method (i.e., \code{"procrustes"}, \code{"homography"}, or \code{"olsmap"}). 
 If \code{TRUE}, conduct optimization of transformation through RANSAC
@@ -210,8 +232,7 @@ two separate datasets.
 }
 \seealso{
 \code{\link{ipest}}, \code{\link{setanchors}}, 
-\code{\link{bridge.procrustes}}, \code{\link{bridge.homography}}, 
-\code{\link{bridge.olsmap}},
+\code{\link{bridge.linearmap}},
 \code{\link{oocflex}}, \code{\link[oc]{oc}}, \code{\link[basicspace]{blackbox}},
 \code{\link[wnominate]{wnominate}}, \code{\link[pscl]{ideal}}
 }

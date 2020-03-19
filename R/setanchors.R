@@ -63,14 +63,20 @@
 #' Specify the row numbers of anchors in \code{d2}.
 #' @param anchors.newdata Matrix or data.frame of anchors. Must have identical 
 #' columns as \code{d1} and \code{d2}. Used if \code{anchors.method=="newdata"}. 
+#' @param anchors.selectrows.data Required if \code{anchors.method=="selectrows"}. 
+#' Specify the dataset where anchors are originally found. 
+#' Must be the same length as \code{anchors.selectrows.d1}. Allowed values are 1 (=\code{d1}), 
+#' 2 (=\code{d2}) and 3 (=new data).  
 #' 
 #' @return A list with the following elements:
 #' \itemize{
-#'   \item \code{d1x}: \code{d1} with anchors.
-#'   \item \code{d1x}: \code{d1} with anchors.
-#'   \item \code{respdt}: data.frame to store the ideal point estimates (empty for now).
-#'   \item \code{anchorrows.ip1}: Anchor locations in \code{d1x}.
-#'   \item \code{anchorrows.ip2}: Anchor locations in \code{d2x}.
+#'   \item \code{bridge.data}: data.frame to store the ideal point estimates in the next method.
+#'   \item \code{d.ip1}: \code{d1} with anchors.
+#'   \item \code{d.ip2}: \code{d2} with anchors.
+#'   \item \code{anchorrows.ip1}: Anchor locations in \code{d.ip1}.
+#'   \item \code{anchorrows.ip2}: Anchor locations in \code{d.ip2}.
+#'   \item \code{anchorrows.ip1.data}: Original dataset for anchors identified in \code{anchorrows.ip1}.
+#'   \item \code{anchorrows.ip2.data}: Original dataset for anchors identified in \code{anchorrows.ip2}.
 #' }
 #' 
 #' @author Tzu-Ping Liu \email{jamesliu0222@@gmail.com}, Gento Kato \email{gento.badger@@gmail.com}, and Sam Fuller \email{sjfuller@@ucdavis.edu}.
@@ -89,8 +95,9 @@ setanchors <- function(d1,d2,
                        anchors.subsample.wgt.d2 = NULL,
                        anchors.selectrows.d1 = 1:100,
                        anchors.selectrows.d2 = 1:100,
+                       anchors.selectrows.data = NULL,
                        anchors.newdata = NULL
-) {
+                       ) {
   
   ## Check Inputs
   if (is.vector(d1)) {
@@ -106,14 +113,7 @@ setanchors <- function(d1,d2,
   if (is.data.frame(d1)) d1 <- as.matrix(d1)
   if (is.data.frame(d2)) d2 <- as.matrix(d2)
   
-  # Respondents Data
-  respdt <- data.frame(allid = seq(1,nrow(d1)+nrow(d2)),
-                       subid = c(seq(1,nrow(d1)),seq(1,nrow(d2))),
-                       data = c(rep(1, nrow(d1)), rep(2, nrow(d2))),
-                       isanchor = 0)
-  
   ## Set Anchors
-  cat("Setting anchors...\n\n")
   if (anchors.method=="newdata") {
     
     if (ncol(d1)!=ncol(d2)) stop("d1 and d2 must have the same number of columns!")
@@ -146,8 +146,14 @@ setanchors <- function(d1,d2,
     ## Dataset for Ideal Point Computation
     d1x <- rbind(d1, ac)
     d2x <- rbind(d2, ac)
+    
+    # Raw Number for Anchors
     anchorrows.ip1 <- seq(nrow(d1)+1,nrow(d1x))
     anchorrows.ip2 <- seq(nrow(d2)+1,nrow(d2x))
+    
+    ## Original Dataset of Anchors 
+    anchorrows.ip1.data <- rep(3, length(anchorrows.ip1))
+    anchorrows.ip2.data <- rep(3, length(anchorrows.ip2))
     
   } else if (anchors.method=="selectrows") { 
     
@@ -155,17 +161,73 @@ setanchors <- function(d1,d2,
       stop("anchors.selectrows.d1 and anchors.selectrows.d2 must have the same length!")
     }
     
+    if (is.null(anchors.selectrows.data)) {
+      stop("anchors.selectrows.data must be set!")
+    }
+    
+    if (length(anchors.selectrows.data)!=length(anchors.selectrows.d1)) {
+      stop("anchors.selectrows.data and anchors.selectrows.d1 must have the same length!")
+    }
+    
+    # Keeping Locations 
+    kploc1 <- seq(1,nrow(d1))[which(!seq(1,nrow(d1)) %in% anchors.selectrows.d1[which(anchors.selectrows.data!=1)])]
+    kploc2 <- seq(1,nrow(d2))[which(!seq(1,nrow(d2)) %in% anchors.selectrows.d2[which(anchors.selectrows.data!=2)])]
+    kploc3_1 <- seq(1,nrow(d1))[which(seq(1,nrow(d1)) %in% anchors.selectrows.d1[which(anchors.selectrows.data==3)])]
+    kploc3_2 <- seq(1,nrow(d2))[which(seq(1,nrow(d2)) %in% anchors.selectrows.d2[which(anchors.selectrows.data==3)])]
+    
+    # Removing Locations
+    rmloc1 <- seq(1,nrow(d1))[which(seq(1,nrow(d1)) %in% anchors.selectrows.d1[which(anchors.selectrows.data!=1)])]
+    rmloc2 <- seq(1,nrow(d2))[which(seq(1,nrow(d2)) %in% anchors.selectrows.d2[which(anchors.selectrows.data!=2)])]
+    
+    # Anchor Locations in respdt
+    acloc1 <- seq(1,length(kploc1))[which(kploc1 %in% anchors.selectrows.d1[which(anchors.selectrows.data==1)])]
+    acloc2 <- seq(1,length(kploc2))[which(kploc2 %in% anchors.selectrows.d2[which(anchors.selectrows.data==2)])]
+
+    # Respondents Data
+    respdt <- data.frame(allid = seq(1,nrow(d1[kploc1,])+nrow(d2[kploc2,])),
+                         subid = c(seq(1,nrow(d1[kploc1,])),seq(1,nrow(d2[kploc2,]))),
+                         data = c(rep(1, nrow(d1[kploc1,])), rep(2, nrow(d2[kploc2,]))),
+                         isanchor = 0)
+    if(length(kploc3_1)>0) {
+      # Additional rows in respdt
+      respdt_add <- data.frame(allid = seq(nrow(respdt)+1,nrow(respdt)+nrow(d1[kploc3_1,])),
+                               subid = seq(1,nrow(d1[kploc3_1,])),
+                               data = 3,
+                               isanchor = 1)
+      respdt <- rbind(respdt, respdt_add)
+    }
+    
     # Update respdt
-    respdt$isanchor[anchors.selectrows.d1] <- 1
-    respdt$isanchor[anchors.selectrows.d2+nrow(d1)] <- 1
+    respdt$isanchor[acloc1] <- 1
+    respdt$isanchor[length(kploc1)+acloc2] <- 1
     
     ## Dataset for Ideal Point Computation
-    d1x <- d1
-    d2x <- d2
-    anchorrows.ip1 <- anchors.selectrows.d1
-    anchorrows.ip2 <- anchors.selectrows.d2
+    d1x <- d1[c(kploc1,rmloc1,kploc3_1),]
+    d2x <- d2[c(kploc2,rmloc2,kploc3_2),]
+    
+    ## Anchor Rows
+    anchorrows.ip1 <- rep(FALSE,nrow(d1))
+    anchorrows.ip1[anchors.selectrows.d1] <- TRUE
+    anchorrows.ip1 <- which(anchorrows.ip1[c(kploc1,rmloc1,kploc3_1)])
+    anchorrows.ip2 <- rep(FALSE,nrow(d2))
+    anchorrows.ip2[anchors.selectrows.d2] <- TRUE
+    anchorrows.ip2 <- which(anchorrows.ip2[c(kploc2,rmloc2,kploc3_2)])
+    
+    ## Original Dataset of Anchors 
+    anchorrows.ip1.data <- c(rep(1, length(acloc1)),
+                             rep(2, length(rmloc1)),
+                             rep(3, length(kploc3_1)))
+    anchorrows.ip2.data <- c(rep(2, length(acloc2)),
+                             rep(1, length(rmloc2)),
+                             rep(3, length(kploc3_2)))
     
   } else if (anchors.method=="subsample") {
+    
+    # Respondents Data
+    respdt <- data.frame(allid = seq(1,nrow(d1)+nrow(d2)),
+                         subid = c(seq(1,nrow(d1)),seq(1,nrow(d2))),
+                         data = c(rep(1, nrow(d1)),rep(2, nrow(d2))),
+                         isanchor = 0)
     
     ## Sample subset of rows and use it as anchor
     if (anchors.subsample.method=="random") {
@@ -209,18 +271,28 @@ setanchors <- function(d1,d2,
       
     }
     
+    # Update respdt
+    respdt$isanchor[respdt$data==1][anchors.samplerows.d1] <- 1
+    respdt$isanchor[respdt$data==2][anchors.samplerows.d2] <- 1
+    
     ## Update Dataset for Ideal Point Computation
     d1x <- rbind(d1, d2[anchors.samplerows.d2,])
     d2x <- rbind(d2, d1[anchors.samplerows.d1,])
     if (nrow(d1x)>nrow(d1)) {
       anchorrows.ip1 <- c(anchors.samplerows.d1, seq(nrow(d1)+1,nrow(d1x)))
+      anchorrows.ip1.data <- c(rep(1, length(anchors.samplerows.d1)),
+                               rep(2, length(seq(nrow(d1)+1,nrow(d1x)))))
     } else {
       anchorrows.ip1 <- anchors.samplerows.d1
+      anchorrows.ip1.data <- c(rep(1, length(anchors.samplerows.d1)))
     }
     if (nrow(d2x)>nrow(d2)) {
       anchorrows.ip2 <- c(anchors.samplerows.d2, seq(nrow(d2)+1,nrow(d2x)))
+      anchorrows.ip2.data <- c(rep(2, length(anchors.samplerows.d2)),
+                               rep(1, length(seq(nrow(d2)+1,nrow(d2x)))))
     } else {
       anchorrows.ip2 <- anchors.samplerows.d2
+      anchorrows.ip2.data <- c(rep(2, length(anchors.samplerows.d2)))
     }
     
   } else {
@@ -229,10 +301,32 @@ setanchors <- function(d1,d2,
     
   }
   
-  out <- list(respdt=respdt, 
-              d1x=d1x, d2x=d2x,
+  out <- list(bridge.data=respdt, 
+              d.ip1=d1x, d.ip2=d2x,
               anchorrows.ip1=anchorrows.ip1,
-              anchorrows.ip2=anchorrows.ip2)
+              anchorrows.ip2=anchorrows.ip2,
+              anchorrows.ip1.data=anchorrows.ip1.data,
+              anchorrows.ip2.data=anchorrows.ip2.data,
+              anchors.method = anchors.method)
+  
+  if (anchors.method=="subsample") {
+    out$anchors.subsample.method = anchors.subsample.method
+    out$anchors.subsample.pr = anchors.subsample.pr
+    out$anchors.subsample.wgt.d1 = anchors.subsample.wgt.d1
+    out$anchors.subsample.wgt.d2 = anchors.subsample.wgt.d1
+    if (anchors.subsample.method=="selectrows") {
+      out$anchors.selectrows.d1 = anchors.selectrows.d1
+      out$anchors.selectrows.d2 = anchors.selectrows.d2
+    }
+  } else if (anchors.method=="selectrows") {
+    out$anchors.selectrows.d1 = anchors.selectrows.d1
+    out$anchors.selectrows.d2 = anchors.selectrows.d2
+    out$anchors.selectrows.data = anchors.selectrows.data
+  } else if (anchors.method=="newdata") {
+    out$anchors.newdata = anchors.newdata
+  }
+  
+  class(out) <- c("anchors.out", class(out))
   return(out)
   
 }

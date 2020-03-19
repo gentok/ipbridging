@@ -69,7 +69,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">ipbridging</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.6</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.0.8</span>
       </span>
     </div>
 
@@ -114,7 +114,7 @@
   <span class='kw'>method</span> <span class='kw'>=</span> <span class='st'>"ooc"</span>,
   <span class='kw'>dims</span> <span class='kw'>=</span> <span class='fl'>2</span>,
   <span class='kw'>polarity</span> <span class='kw'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span>(<span class='fl'>1</span>, <span class='fl'>1</span>),
-  <span class='kw'>irt_type</span> <span class='kw'>=</span> <span class='st'>"binary"</span>,
+  <span class='kw'>irt.type</span> <span class='kw'>=</span> <span class='st'>"binary"</span>,
   <span class='no'>...</span>
 )</pre>
 
@@ -137,11 +137,11 @@
 <li><p><code>"oc"</code>: Optimal classification. Calls <code><a href='https://rdrr.io/pkg/oc/man/oc.html'>oc</a></code> function from <code>oc</code> package (<code>polarity=c(1,1)</code> by default).</p></li>
 <li><p><code>"wnominate"</code>: W-NOMINATE. Calls <code><a href='https://rdrr.io/pkg/wnominate/man/wnominate.html'>wnominate</a></code> function from <code>wnominate</code> package  (<code>polarity=c(1,1)</code> by default).</p></li>
 <li><p><code>"irtMCMC"</code>: IRT model via Markov chain Monte Carlo method. 
-  Calls <code><a href='https://rdrr.io/pkg/pscl/man/ideal.html'>ideal</a></code> function from <code>pscl</code> package if <code>irt_type=="binary"</code>;
-  Calls <code><a href='https://rdrr.io/pkg/MCMCpack/man/MCMCfactanal.html'>MCMCfactanal</a></code> function from <code>MCMCpack</code> package if <code>irt_type=="ordered"</code> (still provisional).</p></li>
+  Calls <code><a href='https://rdrr.io/pkg/pscl/man/ideal.html'>ideal</a></code> function from <code>pscl</code> package if <code>irt.type=="binary"</code>;
+  Calls <code><a href='https://rdrr.io/pkg/MCMCpack/man/MCMCfactanal.html'>MCMCfactanal</a></code> function from <code>MCMCpack</code> package if <code>irt.type=="ordered"</code> (still provisional).</p></li>
 <li><p><code>"irtEM"</code>: IRT model via EM algorithm method (only one dimensional ideal points. This option is still provisional).
-  Calls <code><a href='https://rdrr.io/pkg/emIRT/man/binIRT.html'>binIRT</a></code> function from <code>emIRT</code> package if <code>irt_type=="binary"</code>;
-  Calls <code><a href='https://rdrr.io/pkg/emIRT/man/ordIRT.html'>ordIRT</a></code> function from <code>emIRT</code> package if <code>irt_type=="ordered"</code> (Only 3 category variable can be used).</p></li>
+  Calls <code><a href='https://rdrr.io/pkg/emIRT/man/binIRT.html'>binIRT</a></code> function from <code>emIRT</code> package if <code>irt.type=="binary"</code>;
+  Calls <code><a href='https://rdrr.io/pkg/emIRT/man/ordIRT.html'>ordIRT</a></code> function from <code>emIRT</code> package if <code>irt.type=="ordered"</code> (Only 3 category variable can be used).</p></li>
 </ul><p>For <code>method=="ooc"</code>, the inputs <code>d1</code> and <code>d2</code> must be positive integer. 
 For all other methods, the inputs must be a dummy variable indication 0=Nay and 1=Yea (and 9 for unit nonresponse).
 All methods allow item non-response as NA.</p></td>
@@ -159,10 +159,10 @@ constrained to have a positive (i.e., right-wing or conservative) score on each 
 Used when <code>method</code> is <code>"ooc"</code>, <code>"oc"</code>, or <code>"wnominate"</code>.</p></td>
     </tr>
     <tr>
-      <th>irt_type</th>
+      <th>irt.type</th>
       <td><p>Used if <code>method</code> is <code>"irtMCMC"</code> or <code>"irtEM"</code>. 
 If <code>"binary"</code> the binary IRT will be estimated. If <code>"ordered"</code>, 
-the ordered IRT will be estimated.</p></td>
+the ordered IRT will be estimated (the ordered option is provisional).</p></td>
     </tr>
     <tr>
       <th>...</th>
@@ -175,7 +175,7 @@ called in <code>method</code>.</p></td>
 
     <p>A list with the following elements</p><ul>
 <li><p><code>ip</code>: Matrix of idealpoints.</p></li>
-<li><p><code>ip_f</code>: Model outputs including other information.</p></li>
+<li><p><code>info</code>: Outputs including other information.</p></li>
 </ul>
 
     <h2 class="hasAnchor" id="references"><a class="anchor" href="#references"></a>References</h2>

@@ -9,7 +9,6 @@ nv.svm(
   resp,
   kernel = "radial",
   tune.param = "heuristics",
-  use.gpu = FALSE,
   param.heuristics.k = 3,
   param.heuristics.frac = 0.5,
   ...
@@ -45,14 +44,6 @@ Following options are currently available:
   to obtain the best perfomed model in the given parameter ranges. 
 }}
 
-\item{use.gpu}{(THIS OPTION IS BETA VERSION, NOT CONFIRMED TO WORK) 
-If \code{TRUE}, the method replaces \code{\link[e1071]{best.tune}} 
-and \code{\link[e1071]{svm}} functions with 
-the \code{best.tune} and \code{svm} functions in \code{Rgtsvm} package, which contains
-GPU accelerate method of \code{svm} function. Install \code{Rgtsvm} manually. 
-You need to have Linux computer with NVIDIA GPU for the installation.
-Check \url{https://github.com/Danko-Lab/Rgtsvm} for more details.}
-
 \item{param.heuristics.k}{If \code{tune.param=="heuristics"}, the method uses 
 k nearest neighbors regression to estimate the noise variance in response variable
  for the detemination of epsilon.
@@ -76,7 +67,6 @@ ordered responses.
 \itemize{
   \item Chang, C. & C. Lin, LIBSVM: A Library for Support Vector Machines, \url{http://www.csie.ntu.edu.tw/~cjlin/libsvm}.
   \item Cherkassky, V. & Y. Ma, 2004, "Practical Selection of SVM Parameters and Noise Estimation for SVM Regression", Neural Networks, 17, 113 - 126.
-  \item Cotter, A., N. Srebro, & J. Kreshet, 2011, "A GPU-Tailored Approach for Training Kernelized SVMs", 17th ACM SIGKDD Conference on Knowledge Discovery and Data Mining.
 }
 }
 \seealso{
