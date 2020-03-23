@@ -145,17 +145,22 @@ two separate datasets.</p>
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>d1</th>
-      <td><p>Matrix or data.frame of 'reference' responses.
-(i.e., In mapping methods, ideal points based on <code>d2</code> will be 
-transformed and mapped to ideal point space based on <code>d1</code>).
-Rows are resepondents and columns are questions/issues. 
-Alternatively, if <code>input.type=="idealpoints"</code>, one can directly 
-set matrix or data.frame of ideal points (rows are respondents and 
-columns are ideal point dimensions).</p></td>
+      <td><p>First dataset that contains some policy preferences. 
+Must be one of following types:</p><ul>
+<li><p>If <code>input.type=="responses"</code>, matrix or data.frame of responses. 
+  Rows are resepondents and columns are questions/issues.</p></li>
+<li><p>If <code>input.type=="idealpoints"</code>, matrix or data.frame of ideal points.
+  Rows are respondents and columns are ideal point dimensions.</p></li>
+<li><p>If ideal points are estimated by <code><a href='ipest.html'>ipest</a></code> function, 
+  one can assign <code>ipest.out</code> object directly to here.</p></li>
+<li><p>If anchored data is created using <code><a href='setanchors.html'>setanchors</a></code> function, 
+  one can leave <code>d1==NULL</code> and set <code>anchors.out</code> object to 
+  <code>anchor.method</code> argument.</p></li>
+</ul></td>
     </tr>
     <tr>
       <th>d2</th>
-      <td><p>Matrix or data.frame of responses (or ideal points) to be transformed.</p></td>
+      <td><p>Second dataset that contains some policy preferences. Must be the same class of object as <code>d1</code>.</p></td>
     </tr>
     <tr>
       <th>bridge.method</th>
@@ -198,7 +203,12 @@ Ignored if <code>bridge.method</code> is <code>"joint"</code> or <code>"modelmap
   selection if <code>input.type=="idealpoints"</code>.</p></li>
 <li><p><code>"newdata"</code> Use new dataset that only contains anchors. The data.frame
   assigned in <code>anchors.newdata</code> are appended to both <code>d1</code> and <code>d2</code>.</p></li>
-</ul><p>Note that <code>"subsample"</code> and <code>"newdata"</code> requires <code>d1</code> and <code>d2</code>
+<li><p>One can also set the output from <code><a href='setanchors.html'>setanchors</a></code> function directly to 
+  this argument. Then, if <code>d1,d2==NULL</code>, the ideal points are estimated using 
+  datasets contained in <code>anchors.out</code> object. If <code>ipest.out</code> objects are 
+  assigned to <code>d1,d2</code> or <code>input.type=="idealpoints"</code>, <code>anchors.out</code> 
+  object is used only for the bridging purpose.</p></li>
+</ul><p>Note that <code>"subsample"</code> and <code>"newdata"</code> require <code>d1</code> and <code>d2</code>
 to have identical columns. This is not required for <code>"selectrows"</code>.</p></td>
     </tr>
     <tr>
@@ -219,11 +229,15 @@ are currently available:</p><ul>
     </tr>
     <tr>
       <th>anchors.subsample.pr</th>
-      <td><p>Used when  <code>anchors.method=="subsample"</code>. 
-Proportion of dataset (i.e., <code>d1</code> and <code>d2</code>) 
-to be sampled as anchor. The propotion is determined by the dataset of smaller size if 
+      <td><p>Numeric vector of length 1 or 2. 
+Used when  <code>anchors.method=="subsample"</code>. 
+Proportion of dataset (i.e., <code>d1</code> and <code>d2</code>) to be sampled as anchor. 
+When length is 1, the propotion is determined by the dataset of smaller size if 
 <code>anchors.subsample.method=="random"</code>, specific dataset's size if 
-<code>anchors.subsample.method</code> is <code>"random.d1"</code> or <code>"random.d2"</code>.</p></td>
+<code>anchors.subsample.method</code> is <code>"random.d1"</code> or <code>"random.d2"</code>. 
+When length is 2 and <code>anchors.subsample.method=="random"</code>, the first 
+element determines the proportion in <code>d1</code>, the second element determines 
+the proportion in <code>d2</code>.</p></td>
     </tr>
     <tr>
       <th>anchors.subsample.wgt.d1</th>

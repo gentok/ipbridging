@@ -77,11 +77,15 @@
 #'   in \code{anchors.selectrows.d1} and \code{anchors.selectrows.d2}, respectively
 #'   (Two vectors does not have to have the same length).
 #' }
-#' @param anchors.subsample.pr Used when  \code{anchors.method=="subsample"}. 
-#' Proportion of dataset (i.e., \code{d1} and \code{d2}) 
-#' to be sampled as anchor. The propotion is determined by the dataset of smaller size if 
+#' @param anchors.subsample.pr Numeric vector of length 1 or 2. 
+#' Used when  \code{anchors.method=="subsample"}. 
+#' Proportion of dataset (i.e., \code{d1} and \code{d2}) to be sampled as anchor. 
+#' When length is 1, the propotion is determined by the dataset of smaller size if 
 #' \code{anchors.subsample.method=="random"}, specific dataset's size if 
 #' \code{anchors.subsample.method} is \code{"random.d1"} or \code{"random.d2"}. 
+#' When length is 2 and \code{anchors.subsample.method=="random"}, the first 
+#' element determines the proportion in \code{d1}, the second element determines 
+#' the proportion in \code{d2}.
 #' @param anchors.subsample.wgt.d1 Optional weights passed to \code{prob} option of 
 #' \code{\link[base]{sample}} function used in random sampling of anchors from \code{d1} when 
 #' \code{anchors.subsample.method} is \code{"random"} or \code{"random.d1"}. If not \code{NULL}, 

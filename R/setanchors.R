@@ -41,11 +41,15 @@
 #'   in \code{anchors.selectrows.d1} and \code{anchors.selectrows.d2}, respectively
 #'   (Two vectors does not have to have the same length).
 #' }
-#' @param anchors.subsample.pr Used when  \code{anchors.method=="subsample"}. 
-#' Proportion of dataset (i.e., \code{d1} and \code{d2}) 
-#' to be sampled as anchor. The propotion is determined by the dataset of smaller size if 
+#' @param anchors.subsample.pr Numeric vector of length 1 or 2. 
+#' Used when  \code{anchors.method=="subsample"}. 
+#' Proportion of dataset (i.e., \code{d1} and \code{d2}) to be sampled as anchor. 
+#' When length is 1, the propotion is determined by the dataset of smaller size if 
 #' \code{anchors.subsample.method=="random"}, specific dataset's size if 
 #' \code{anchors.subsample.method} is \code{"random.d1"} or \code{"random.d2"}. 
+#' When length is 2 and \code{anchors.subsample.method=="random"}, the first 
+#' element determines the proportion in \code{d1}, the second element determines 
+#' the proportion in \code{d2}.
 #' @param anchors.subsample.wgt.d1 Optional weights passed to \code{prob} option of 
 #' \code{\link[base]{sample}} function used in random sampling of anchors from \code{d1} when 
 #' \code{anchors.subsample.method} is \code{"random"} or \code{"random.d1"}. If not \code{NULL}, 
@@ -233,12 +237,18 @@ setanchors <- function(d1,d2,
     if (anchors.subsample.method=="random") {
       
       ## Random Sample of Rows
-      anchors.sample.size <-  floor(min(nrow(d1),nrow(d2))*anchors.subsample.pr)
+      if (length(anchors.subsample.pr)>2) stop("Length of anchors.subsample.pr must be <=2.")
+      if (length(anchors.subsample.pr)==1) {
+        anchors.sample.size <-  rep(floor(min(nrow(d1),nrow(d2))*anchors.subsample.pr),2)
+      } else {
+        anchors.sample.size <-  c(nrow(d1)*anchors.subsample.pr[1],
+                                  nrow(d2)*anchors.subsample.pr[2])
+      }
       anchors.samplerows.d1 <- sample.int(nrow(d1), 
-                                          size = anchors.sample.size,
+                                          size = anchors.sample.size[1],
                                           prob = anchors.subsample.wgt.d1)
       anchors.samplerows.d2 <- sample.int(nrow(d2), 
-                                          size = anchors.sample.size,
+                                          size = anchors.sample.size[2],
                                           prob = anchors.subsample.wgt.d2)
       
     } else if (anchors.subsample.method=="random.d1") {

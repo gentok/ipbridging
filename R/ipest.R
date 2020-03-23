@@ -87,12 +87,34 @@ ipest <- function(d,
     
   } else if (method=="oc") {
     
-    ip_f <- oc(rollcall(d), dims=dims, polarity=polarity, ...)
+    # Default minvotes set to 10
+    set.minvotes <- TRUE
+    if (length(list(...))>0) {
+      if ("minvotes"%in%names(list(...))) set.minvotes <- FALSE
+    }  
+    
+    if (set.minvotes) {
+      ip_f <- oc(rollcall(d), dims=dims, polarity=polarity, 
+                 minvotes = 10, ...)
+    } else {
+      ip_f <- oc(rollcall(d), dims=dims, polarity=polarity, ...)
+    }
     ip <- ip_f$legislators[,grepl("coord", colnames(ip_f$legislators))]
     
   } else if (method=="wnominate") {
     
-    ip_f <- wnominate(rollcall(d), dims=dims, polarity=polarity, ...)
+    # Default minvotes set to 10
+    set.minvotes <- TRUE
+    if (length(list(...))>0) {
+      if ("minvotes"%in%names(list(...))) set.minvotes <- FALSE
+    }  
+    
+    if (set.minvotes) {
+      ip_f <- wnominate(rollcall(d), dims=dims, polarity=polarity, 
+                        minvotes=10, ...)
+    } else {
+      ip_f <- wnominate(rollcall(d), dims=dims, polarity=polarity, ...)
+    }
     ip <- ip_f$legislators[,grepl("coord", colnames(ip_f$legislators))]
     
   } else if (method=="irtMCMC") {
