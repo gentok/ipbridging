@@ -216,9 +216,16 @@ bridge.linearmap <- function(ip1,
         #####################################
         # Regression Formula
         f <- as.formula(paste("k ~", paste(colnames(ac2_r), collapse="+")))
+        # Regression Function
+        regout <- function(k, f, ac2) {
+          data <- as.data.frame(cbind(k, ac2))
+          colnames(data) <- c("k", colnames(ac2))
+          eval(substitute(out <- lm(f, data=data)))
+          return(out)
+        }
         ## Models
-        acmod <- plyr::alply(ac1_r, 2, 
-                             function(k) lm(f, data=as.data.frame(cbind(k, ac2_r))))
+        r_acmod <- plyr::alply(ac1_r, 2, 
+                               function(k) regout(k, f, ac2_r))
         
         ##############################################################
         ## Transforming the rest of (supposed) matching respondents ##
@@ -308,9 +315,16 @@ bridge.linearmap <- function(ip1,
       ###########################################
       # Regression Formula
       r_f <- as.formula(paste("k ~", paste(colnames(ac2[f_inl,]), collapse="+")))
+      # Regression Function
+      regout <- function(k, f, ac2) {
+        data <- as.data.frame(cbind(k, ac2))
+        colnames(data) <- c("k", colnames(ac2))
+        eval(substitute(out <- lm(f, data=data)))
+        return(out)
+      }
       ## Models
       r_acmod <- plyr::alply(ac1[f_inl,], 2, 
-                             function(k) lm(r_f, data=as.data.frame(cbind(k, ac2[f_inl,]))))
+                             function(k) regout(k, r_f, ac2[f_inl,]))
       
       #########################################
       ## Transforming the "real" respondents ##
@@ -382,8 +396,15 @@ bridge.linearmap <- function(ip1,
       ###############################
       # Regression Formula
       f <- as.formula(paste("k ~", paste(colnames(ac2), collapse="+")))
+      # Regression Function
+      regout <- function(k, f, ac2) {
+        data <- as.data.frame(cbind(k, ac2))
+        colnames(data) <- c("k", colnames(ac2))
+        eval(substitute(out <- lm(f, data=data)))
+        return(out)
+      }
       ## Models
-      acmod <- plyr::alply(ac1, 2, function(k) lm(f, data=as.data.frame(cbind(k, ac2))))
+      acmod <- plyr::alply(ac1, 2, function(k) regout(k, f, ac2))
       
       #############################
       ## Transforming All Points ##
