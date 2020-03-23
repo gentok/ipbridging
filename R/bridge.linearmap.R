@@ -140,6 +140,7 @@ bridge.linearmap <- function(ip1,
   ## Generating Anchors 
   ac1 <- ip1[which(ip1.rowid %in% anchorrows.ip1),,drop=FALSE]
   ac2 <- ip2[which(ip2.rowid %in% anchorrows.ip2),,drop=FALSE]
+  if (method=="olsmap") colnames(ac2) <- paste0("cd", 1:ncol(ac2))
   
   ##########################################
   ## Find Optimal Transformation Matrices ##
