@@ -347,7 +347,7 @@ ipbridging <- function(d1=NULL, d2=NULL,
     respdt <- data.frame(allid = seq(1,nrow(d1)+nrow(d2)),
                          subid = c(seq(1,nrow(d1)),seq(1,nrow(d2))),
                          data = c(rep(1, nrow(d1)), rep(2, nrow(d2))),
-                         isanchor = 0)
+                         isanchor = 0, anchorid=NA)
     
     # Anchor Identifier (NA in joint)
     respdt$isanchor <- NA
@@ -535,19 +535,49 @@ ipbridging <- function(d1=NULL, d2=NULL,
     for (i in 1:ncol(ip1)) {
       
       # Assignment
-      respdt[,paste0("ip1_",i,"D")][which(respdt$data==1|respdt$isanchor==1)] <- 
-        ip1[,i]
-      respdt[,paste0("ip2_",i,"D")][which(respdt$data==2)] <- 
-        ip2[,i][which(!seq(1,nrow(ip2)) %in% anchorrows.ip2[which(anchorrows.ip2.data!=2)])]
-      respdt[,paste0("ip2_",i,"D")][which(respdt$data!=2 & respdt$isanchor==1)] <- 
-        ip2[,i][which(seq(1,nrow(ip2)) %in% anchorrows.ip2[which(anchorrows.ip2.data!=2)])]
+      ## Original ip1
+      respdt[which(respdt$data==1),paste0("ip1_",i,"D")] <- 
+        ip1[seq(1,length(which(respdt$data==1))),i]
+      if (length(which(anchorrows.ip2.data==2))>0) {
+        respdt[which(respdt$data==2),paste0("ip1_",i,"D")][anchorrows.ip2[which(anchorrows.ip2.data==2)]] <- 
+          ip1[seq(length(which(respdt$data==1))+1, 
+                  length(which(respdt$data==1))+length(which(anchorrows.ip2.data==2))),i]
+      }
+      if (length(which(anchorrows.ip2.data==3))>0) {
+        respdt[which(respdt$data==3),paste0("ip1_",i,"D")] <- 
+          ip1[seq(length(which(respdt$data==1))+length(which(anchorrows.ip2.data==2))+1,
+                  nrow(ip1)),i]
+      }
+      ## Original ip2
+      respdt[which(respdt$data==2),paste0("ip2_",i,"D")] <- 
+        ip2[seq(1,length(which(respdt$data==2))),i]
+      if (length(which(anchorrows.ip1.data==1))>0) {
+        respdt[which(respdt$data==1),paste0("ip2_",i,"D")][anchorrows.ip1[which(anchorrows.ip1.data==1)]] <- 
+          ip2[seq(length(which(respdt$data==2))+1, 
+                  length(which(respdt$data==2))+length(which(anchorrows.ip1.data==1))),i]
+      }
+      if (length(which(anchorrows.ip1.data==3))>0) {
+        respdt[which(respdt$data==3),paste0("ip2_",i,"D")] <- 
+          ip2[seq(length(which(respdt$data==2))+length(which(anchorrows.ip1.data==1))+1,
+                  nrow(ip2)),i]
+      }
       
       if (tr.trans.d2) {
         
-        respdt[,paste0("ip2_trans_",i,"D")][which(respdt$data==2)] <- 
-          ip2_trans[,i][which(!seq(1,nrow(ip2)) %in% anchorrows.ip2[which(anchorrows.ip2.data!=2)])]
-        respdt[,paste0("ip2_trans_",i,"D")][which(respdt$data!=2 & respdt$isanchor==1)] <- 
-          ip2_trans[,i][which(seq(1,nrow(ip2)) %in% anchorrows.ip2[which(anchorrows.ip2.data!=2)])]
+        ## Transformed ip2
+        respdt[which(respdt$data==2),paste0("ip2_trans_",i,"D")] <- 
+          ip2_trans[seq(1,length(which(respdt$data==2))),i]
+        if (length(which(anchorrows.ip1.data==1))>0) {
+          respdt[which(respdt$data==1),paste0("ip2_trans_",i,"D")][anchorrows.ip1[which(anchorrows.ip1.data==1)]] <- 
+            ip2_trans[seq(length(which(respdt$data==2))+1, 
+                    length(which(respdt$data==2))+length(which(anchorrows.ip1.data==1))),i]
+        }
+        if (length(which(anchorrows.ip1.data==3))>0) {
+          respdt[which(respdt$data==3),paste0("ip2_trans_",i,"D")] <- 
+            ip2_trans[seq(length(which(respdt$data==2))+length(which(anchorrows.ip1.data==1))+1,
+                    nrow(ip2_trans)),i]
+        }
+        # Bridged Ideal Points
         respdt[,paste0("bridged_",i,"D")][which(respdt$data==1)] <- 
           respdt[,paste0("ip1_",i,"D")][which(respdt$data==1)]
         respdt[,paste0("bridged_",i,"D")][which(respdt$data!=1)] <- 
@@ -555,12 +585,24 @@ ipbridging <- function(d1=NULL, d2=NULL,
 
       } else {
         
-        respdt[,paste0("ip1_trans_",i,"D")][which(respdt$data==1|respdt$isanchor==1)] <- 
-          ip1_trans[,i]
+        ## Transformed ip1
+        respdt[which(respdt$data==1),paste0("ip1_trans_",i,"D")] <- 
+          ip1_trans[seq(1,length(which(respdt$data==1))),i]
+        if (length(which(anchorrows.ip2.data==2))>0) {
+          respdt[which(respdt$data==2),paste0("ip1_trans_",i,"D")][anchorrows.ip2[which(anchorrows.ip2.data==2)]] <- 
+            ip1_trans[seq(length(which(respdt$data==1))+1, 
+                    length(which(respdt$data==1))+length(which(anchorrows.ip2.data==2))),i]
+        }
+        if (length(which(anchorrows.ip2.data==3))>0) {
+          respdt[which(respdt$data==3),paste0("ip1_trans_",i,"D")] <- 
+            ip1_trans[seq(length(which(respdt$data==1))+length(which(anchorrows.ip2.data==2))+1,
+                    nrow(ip1_trans)),i]
+        }
+        # Bridged Ideal Points
         respdt[,paste0("bridged_",i,"D")][which(respdt$data==2)] <- 
-          respdt[,paste0("ip2_",i,"D")][which(respdt$data==2)]
+          respdt[which(respdt$data==2),paste0("ip2_",i,"D")]
         respdt[,paste0("bridged_",i,"D")][which(respdt$data!=2)] <- 
-          respdt[,paste0("ip1_trans_",i,"D")][which(respdt$data!=2)]
+          respdt[which(respdt$data!=2),paste0("ip1_trans_",i,"D")]
 
       }
 
@@ -607,7 +649,7 @@ ipbridging <- function(d1=NULL, d2=NULL,
     respdt <- data.frame(allid = seq(1,nrow(d1)+nrow(d2)),
                          subid = c(seq(1,nrow(d1)),seq(1,nrow(d2))),
                          data = c(rep(1, nrow(d1)), rep(2, nrow(d2))),
-                         isanchor = NA)
+                         isanchor = NA, anchorid = NA)
     
     ## Add IP values to respdt
     for(i in 1:ncol(ip_mmap)) respdt[,paste0("bridged_",i,"D")] <- ip_mmap[,i]
@@ -683,23 +725,24 @@ ipbridging <- function(d1=NULL, d2=NULL,
     ## 2D-4: Organize outputs ## 
     ############################
     # Respondents Data
-    respdt <- data.frame(allid = seq(1,nrow(d1)+nrow(d2)),
-                         subid = c(seq(1,nrow(d1)),seq(1,nrow(d2))),
-                         data = c(rep(1, nrow(d1)), rep(2, nrow(d2))),
-                         isanchor = 0)
+    respdt <- data.frame(allid = seq(1,nrow(dx)),
+                         subid = c(seq(1, nrow(d1x)), seq(1, nrow(d2x)), 
+                                   seq(1, length(anchors.selectrows.d1))),
+                         data = c(rep(1, nrow(d1x)), rep(2, nrow(d2x)), 
+                                  rep(3, length(anchors.selectrows.d1))),
+                         isanchor = 0, anchorid = NA)
     
     # Update anchor identifier
-    respdt$isanchor[anchors.selectrows.d1] <- 1
-    respdt$isanchor[anchors.selectrows.d2+nrow(d1)] <- 1
+    respdt$isanchor[which(respdt$data==3)] <- 1
+
+    # Anchor ID
+    respdt$anchorid[which(respdt$data==3)] <- 
+      seq(1, length(which(respdt$data==3)))
     
     ## Add IP values to respdt
     acrows <- c(anchors.selectrows.d1,anchors.selectrows.d2+nrow(d1))
     for(i in 1:ncol(ip_pooled)) {
-      respdt[,paste0("bridged_",i,"D")] <- NA
-      respdt[-acrows,paste0("bridged_",i,"D")] <- 
-        ip_pooled[seq(1,nrow(d1x)+nrow(d2x)),i]
-      respdt[anchors.selectrows.d1,paste0("bridged_",i,"D")] <- 
-        ip_pooled[-seq(1,nrow(d1x)+nrow(d2x)),i]
+      respdt[,paste0("bridged_",i,"D")] <- ip_pooled[,i]
     }
     for(i in 1:ncol(ip_pooled)) respdt[,paste0("ip1_",i,"D")] <- NA
     for(i in 1:ncol(ip_pooled)) respdt[,paste0("ip2_",i,"D")] <- NA

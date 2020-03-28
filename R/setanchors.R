@@ -147,11 +147,16 @@ setanchors <- function(d1,d2,
                              isanchor = 1)
     respdt <- rbind(respdt, respdt_add)
     
+    # Anchor ID
+    respdt$anchorid <- NA
+    respdt$anchorid[which(repdt$isanchor==1)] <- 
+      seq(1,length(which(respdt$isanchor==1))) 
+    
     ## Dataset for Ideal Point Computation
     d1x <- rbind(d1, ac)
     d2x <- rbind(d2, ac)
     
-    # Raw Number for Anchors
+    # Row Number for Anchors
     anchorrows.ip1 <- seq(nrow(d1)+1,nrow(d1x))
     anchorrows.ip2 <- seq(nrow(d2)+1,nrow(d2x))
     
@@ -173,57 +178,80 @@ setanchors <- function(d1,d2,
       stop("anchors.selectrows.data and anchors.selectrows.d1 must have the same length!")
     }
     
-    # Keeping Locations 
-    kploc1 <- seq(1,nrow(d1))[which(!seq(1,nrow(d1)) %in% anchors.selectrows.d1[which(anchors.selectrows.data!=1)])]
-    kploc2 <- seq(1,nrow(d2))[which(!seq(1,nrow(d2)) %in% anchors.selectrows.d2[which(anchors.selectrows.data!=2)])]
-    kploc3_1 <- seq(1,nrow(d1))[which(seq(1,nrow(d1)) %in% anchors.selectrows.d1[which(anchors.selectrows.data==3)])]
-    kploc3_2 <- seq(1,nrow(d2))[which(seq(1,nrow(d2)) %in% anchors.selectrows.d2[which(anchors.selectrows.data==3)])]
-    
-    # Removing Locations
-    rmloc1 <- seq(1,nrow(d1))[which(seq(1,nrow(d1)) %in% anchors.selectrows.d1[which(anchors.selectrows.data!=1)])]
-    rmloc2 <- seq(1,nrow(d2))[which(seq(1,nrow(d2)) %in% anchors.selectrows.d2[which(anchors.selectrows.data!=2)])]
-    
-    # Anchor Locations in respdt
-    acloc1 <- seq(1,length(kploc1))[which(kploc1 %in% anchors.selectrows.d1[which(anchors.selectrows.data==1)])]
-    acloc2 <- seq(1,length(kploc2))[which(kploc2 %in% anchors.selectrows.d2[which(anchors.selectrows.data==2)])]
-
     # Respondents Data
-    respdt <- data.frame(allid = seq(1,nrow(d1[kploc1,])+nrow(d2[kploc2,])),
-                         subid = c(seq(1,nrow(d1[kploc1,])),seq(1,nrow(d2[kploc2,]))),
-                         data = c(rep(1, nrow(d1[kploc1,])), rep(2, nrow(d2[kploc2,]))),
-                         isanchor = 0)
-    if(length(kploc3_1)>0) {
+    # d1
+    respdt1 <- data.frame(allid = NA, subid = NA,
+                          data = rep(1,nrow(d1)), 
+                          isanchor = 0, anchorid = NA)
+    respdt1$isanchor[anchors.selectrows.d1] <- 1
+    for(i in 1:length(anchors.selectrows.d1)) {
+      respdt1$anchorid[anchors.selectrows.d1[i]] <- i
+      respdt1$data[anchors.selectrows.d1[i]] <- anchors.selectrows.data[i]
+    }
+    respdt1 <- respdt1[which(respdt1$data==1),]
+    # d2
+    respdt2 <- data.frame(allid = NA, subid = NA,
+                          data = rep(2,nrow(d2)), isanchor = 0)
+    respdt2$isanchor[anchors.selectrows.d2] <- 1
+    for(i in 1:length(anchors.selectrows.d2)) {
+      respdt2$anchorid[anchors.selectrows.d2[i]] <- i
+      respdt2$data[anchors.selectrows.d2[i]] <- anchors.selectrows.data[i]
+    }
+    respdt2 <- respdt2[which(respdt2$data==2),]
+    ## Combine d1 and d2
+    respdt <- rbind(respdt1, respdt2)
+    # d3 (if any)
+    if(length(which(anchors.selectrows.data==3))>0) {
       # Additional rows in respdt
-      respdt_add <- data.frame(allid = seq(nrow(respdt)+1,nrow(respdt)+nrow(d1[kploc3_1,])),
-                               subid = seq(1,nrow(d1[kploc3_1,])),
+      respdt_add <- data.frame(allid = NA,
+                               subid = seq(1,length(which(anchors.selectrows.data==3))),
                                data = 3,
-                               isanchor = 1)
+                               isanchor = 1,
+                               anchorid = which(anchors.selectrows.data==3))
       respdt <- rbind(respdt, respdt_add)
     }
     
-    # Update respdt
-    respdt$isanchor[acloc1] <- 1
-    respdt$isanchor[length(kploc1)+acloc2] <- 1
-    
     ## Dataset for Ideal Point Computation
-    d1x <- d1[c(kploc1,rmloc1,kploc3_1),]
-    d2x <- d2[c(kploc2,rmloc2,kploc3_2),]
+    d1x <- rbind(d1[which(!seq(1,nrow(d1)) %in% anchors.selectrows.d1[anchors.selectrows.data!=1])],
+                 d1[anchors.selectrows.d1[which(anchors.selectrows.data==2)]],
+                 d1[anchors.selectrows.d1[which(anchors.selectrows.data==3)]])
+    d2x <- rbind(d2[which(!seq(1,nrow(d2)) %in% anchors.selectrows.d2[anchors.selectrows.data!=2])],
+                 d2[anchors.selectrows.d2[which(anchors.selectrows.data==1)]],
+                 d2[anchors.selectrows.d2[which(anchors.selectrows.data==3)]])
     
     ## Anchor Rows
-    anchorrows.ip1 <- rep(FALSE,nrow(d1))
-    anchorrows.ip1[anchors.selectrows.d1] <- TRUE
-    anchorrows.ip1 <- which(anchorrows.ip1[c(kploc1,rmloc1,kploc3_1)])
-    anchorrows.ip2 <- rep(FALSE,nrow(d2))
-    anchorrows.ip2[anchors.selectrows.d2] <- TRUE
-    anchorrows.ip2 <- which(anchorrows.ip2[c(kploc2,rmloc2,kploc3_2)])
+    ### Data 1
+    anchorrows.ip1 <- as.numeric(sapply(which(anchors.selectrows.data==1), function(k) which(respdt[respdt$data==1,]$anchorid==k)))
+    if (length(which(anchors.selectrows.data==2))>0) {
+      anchorrows.ip1 <- c(anchorrows.ip1,
+                          seq(nrow(d1)-length(which(anchors.selectrows.data!=1))+1,
+                              nrow(d1)-length(which(anchors.selectrows.data!=1))+length(which(anchors.selectrows.data==2))))
+    }
+    if (length(which(anchors.selectrows.data==3))>0) {
+      anchorrows.ip1 <- c(anchorrows.ip1,
+                          seq(nrow(d1)-length(which(anchors.selectrows.data==3))+1,
+                              nrow(d1)-length(which(anchors.selectrows.data==3))+length(which(anchors.selectrows.data==3))))
+    }
+    ### Data 2
+    anchorrows.ip2 <- as.numeric(sapply(which(anchors.selectrows.data==2), function(k) which(respdt[respdt$data==2,]$anchorid==k)))
+    if (length(which(anchors.selectrows.data==1))>0) {
+      anchorrows.ip2 <- c(anchorrows.ip2,
+                          seq(nrow(d1)-length(which(anchors.selectrows.data!=2))+1,
+                              nrow(d1)-length(which(anchors.selectrows.data!=2))+length(which(anchors.selectrows.data==1))))
+    }
+    if (length(which(anchors.selectrows.data==3))>0) {
+      anchorrows.ip2 <- c(anchorrows.ip2,
+                          seq(nrow(d1)-length(which(anchors.selectrows.data==3))+1,
+                              nrow(d1)-length(which(anchors.selectrows.data==3))+length(which(anchors.selectrows.data==3))))
+    }
     
     ## Original Dataset of Anchors 
-    anchorrows.ip1.data <- c(rep(1, length(acloc1)),
-                             rep(2, length(rmloc1)),
-                             rep(3, length(kploc3_1)))
-    anchorrows.ip2.data <- c(rep(2, length(acloc2)),
-                             rep(1, length(rmloc2)),
-                             rep(3, length(kploc3_2)))
+    anchorrows.ip1.data <- c(rep(1, length(which(anchors.selectrows.data==1))),
+                             rep(2, length(which(anchors.selectrows.data==2))),
+                             rep(3, length(which(anchors.selectrows.data==3))))
+    anchorrows.ip2.data <- c(rep(2, length(which(anchors.selectrows.data==2))),
+                             rep(1, length(which(anchors.selectrows.data==1))),
+                             rep(3, length(which(anchors.selectrows.data==3))))
     
   } else if (anchors.method=="subsample") {
     

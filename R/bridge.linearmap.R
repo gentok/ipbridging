@@ -233,8 +233,11 @@ bridge.linearmap <- function(ip1,
         ## Prediction
         ac2df <- as.data.frame(ac2)
         colnames(ac2df) <- colnames(ac2)
-        ac2_trans <- sapply(acmod, function(k) predict(k, ac2df))
-        colnames(ac2_trans) <- colnames(ac2)
+        ac2_trans <- ac2
+        for (i in 1:ncol(ip2)) {
+          tmp <- predict(r_acmod[[i]], newdata=ac2df)
+          ac2_trans[,i] <- tmp
+        }
 
       } else {
         
@@ -323,7 +326,7 @@ bridge.linearmap <- function(ip1,
         return(out)
       }
       ## Models
-      r_acmod <- plyr::alply(ac1[f_inl,], 2, 
+      finmod <- plyr::alply(ac1[f_inl,], 2, 
                              function(k) regout(k, r_f, ac2[f_inl,]))
       
       #########################################
@@ -332,8 +335,11 @@ bridge.linearmap <- function(ip1,
       ## Prediction
       ip2df <- as.data.frame(ip2)
       colnames(ip2df) <- colnames(ac2)
-      ip2_trans <- sapply(r_acmod, function(k) predict(k, ip2df))
-      colnames(ip2_trans) <- colnames(ip2)
+      ip2_trans <- ip2
+      for (i in 1:ncol(ip2)) {
+        tmp <- predict(finmod[[i]], newdata=ip2df)
+        ip2_trans[,i] <- tmp
+      }
 
     } else {
       
@@ -404,7 +410,7 @@ bridge.linearmap <- function(ip1,
         return(out)
       }
       ## Models
-      acmod <- plyr::alply(ac1, 2, function(k) regout(k, f, ac2))
+      finmod <- plyr::alply(ac1, 2, function(k) regout(k, f, ac2))
       
       #############################
       ## Transforming All Points ##
@@ -412,9 +418,12 @@ bridge.linearmap <- function(ip1,
       ## Prediction
       ip2df <- as.data.frame(ip2)
       colnames(ip2df) <- colnames(ac2)
-      ip2_trans <- sapply(acmod, function(k) predict(k, ip2df))
-      colnames(ip2_trans) <- colnames(ip2)
-
+      ip2_trans <- ip2
+      for (i in 1:ncol(ip2)) {
+        tmp <- predict(finmod[[i]], newdata=ip2df)
+        ip2_trans[,i] <- tmp
+      }
+      
     } else {
       
       stop("invalid 'method' value!")
@@ -505,7 +514,7 @@ bridge.linearmap <- function(ip1,
                 opt.th.inline = opt.th.inline,
                 blend.th1 = blend.th1, 
                 blend.th2 = blend.th2)
-
+    
   } else {
     
     out <- list(ip1_trans = ip2_trans_f,
@@ -522,6 +531,8 @@ bridge.linearmap <- function(ip1,
                 blend.th2 = blend.th2)
     
   }
+  
+  if (method=="olsmap") out$ols.model <- finmod
   
   return(out)
   
