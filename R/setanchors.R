@@ -149,7 +149,7 @@ setanchors <- function(d1,d2,
     
     # Anchor ID
     respdt$anchorid <- NA
-    respdt$anchorid[which(repdt$isanchor==1)] <- 
+    respdt$anchorid[which(respdt$isanchor==1)] <- 
       seq(1,length(which(respdt$isanchor==1))) 
     
     ## Dataset for Ideal Point Computation

@@ -53,6 +53,7 @@ After successfully installing <code>oc</code> and <code>ooc</code> package, you 
 
 ## Updates Log
 
+* 03/28/2020 Version 0.0.12 (beta version 13)
 * 03/27/2020 Version 0.0.11 (beta version 12)
 * 03/23/2020 Version 0.0.10 (beta version 11)
 * 03/22/2020 Version 0.0.09 (beta version 10)

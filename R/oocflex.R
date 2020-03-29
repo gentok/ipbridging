@@ -332,6 +332,7 @@ oocflex <- function(votemat,
     ##################################################################
     if (ndim>=2){
       
+      cat("\nPreparing to run Ordered Optimal Classification...\n")
       cat("\n\tRunning Ordered Optimal Classification...\n\n")
       start <- proc.time()
       
